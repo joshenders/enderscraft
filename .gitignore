@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Python
+*.pyc
+__pycache__
+.mypy_cache/
+
+# Java
+*.jar

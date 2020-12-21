@@ -1,9 +1,25 @@
+# enderscraft
+
+## File structure
+
+```
+docker/
+```
+
+## Java Version
+
+Provide mechanism to select JVM
+
+- Coretto
+- OpenJDK
+- Oracle Java
+
 ## Tasks
 
 - Fix docker container
   - Remove bad opinions from upstream docker container
   - Layer in mods (computercraft, etc)
-  - Layer  in custom configuration
+  - Layer in custom configuration
 - Buildkite pipeline to build forked docker container
   - build
   - test
@@ -12,6 +28,8 @@
   - Either cloudformation or fargate cli
   - IAM
 - Custom scripts
+  - docker entrypoint
+    - https://aikar.co/2018/07/02/tuning-the-jvm-g1gc-garbage-collector-flags-for-minecraft/
   - Sleep 30 mins after last player disconnects
   - Restore from S3 on startup
   - Snapshot backup to S3 every 5 min
@@ -25,6 +43,7 @@
   - https://github.com/getify/You-Dont-Know-JS
 - rcon
   - https://github.com/conqp/mcipc
+  - https://github.com/itzg/rcon-cli
 - crack the client (for the lolz)
 
 | per vCPU per hour | per GB per hour |
