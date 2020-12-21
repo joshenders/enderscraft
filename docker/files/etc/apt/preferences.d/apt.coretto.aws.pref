@@ -1,0 +1,15 @@
+Package: *
+Pin: origin apt.corretto.aws
+Pin-Priority: 1
+
+Package: java-1.8.0-amazon-corretto-jdk
+Pin: origin apt.corretto.aws
+Pin-Priority: 500
+
+Package: java-11-amazon-corretto-jdk
+Pin: origin apt.corretto.aws
+Pin-Priority: 500
+
+Package: java-15-amazon-corretto-jdk
+Pin: origin apt.corretto.aws
+Pin-Priority: 500
