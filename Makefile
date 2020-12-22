@@ -7,6 +7,7 @@ SCRIPT_DIR   := $(BUILD_DIR)/src
 
 # Docker
 BASE_IMAGE := $(BUILD_DIR)/docker
+IMAGE_ROOT := $(BASE_IMAGE)/files
 DATA_DIR   := /data
 
 # Container
@@ -18,13 +19,16 @@ SERVICE_HOME  := $(DATA_DIR)/$(SERVICE_USER)
 JAVA_PACKAGE := java-15-amazon-corretto-jdk
 
 # Minecraft
+VERSION_MANIFEST_URL := https://launchermeta.mojang.com/mc/game/version_manifest.json
+LATEST_TAG  := release
 LISTEN_PORT := 25565
 RCON_PORT   := 25575
 
 .PHONY: all
 all:
-	make update-aws-apt-key
+	make prepare-image-root
 	make build
+
 
 .PHONY: build
 build:
@@ -39,9 +43,23 @@ build:
 			$(BASE_IMAGE)
 
 
+.PHONE: prepare-image-root
+prepare-image-root:
+	make download-minecraft-server
+	make update-aws-apt-key
+
+
+.PHONY: download-minecraft-server
+download-minecraft-server:
+	$(SCRIPT_DIR)/py/download-minecraft-server.py \
+		--debug \
+		--latest $(LATEST_TAG) \
+			$(IMAGE_ROOT)$(SERVICE_HOME)
+
+
 .PHONY: update-aws-apt-key
 update-aws-apt-key:
-	$(SCRIPT_DIR)/update-aws-apt-key.sh
+	$(SCRIPT_DIR)/sh/update-aws-apt-key.sh
 
 # .PHONY: help
 # help:
