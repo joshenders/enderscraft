@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 
-from typing import Any
+from typing import Any, Type
 
 VERSION_MANIFEST_URL = os.environ.get(
     "VERSION_MANIFEST_URL",
@@ -35,7 +35,7 @@ def get_manifest_from_url(url: str) -> Any:
 
 def download_and_verify_file_from_url(url: str, filename: str, checksum: str) -> bool:
     with open(filename, "wb") as f:
-        log.debug(f"Downloading filename: '{filename}'")
+        log.debug(f"Downloading file: '{url}'")
         resp = urllib.request.urlopen(url)
         size = resp.length
         f.write(resp.read())
@@ -44,7 +44,7 @@ def download_and_verify_file_from_url(url: str, filename: str, checksum: str) ->
     hasher = hashlib.sha1()
 
     with open(filename, "rb") as f:
-        log.debug(f"Calculating checksum for filename '{filename}'")
+        log.debug(f"Calculating checksum for file: '{filename}'")
         buffer = f.read(BLOCKSIZE)
         while len(buffer) > 0:
             hasher.update(buffer)
@@ -63,7 +63,12 @@ def download_and_verify_file_from_url(url: str, filename: str, checksum: str) ->
         return False
 
 
-def exception_handler(exception_type, exception, traceback, debug_hook=sys.excepthook):
+def exception_handler(
+    exception_type,
+    exception,
+    traceback,
+    debug_hook=sys.excepthook,
+) -> None:
     args = parse_args()
     if args.debug_flag:
         debug_hook(exception_type, exception, traceback)
@@ -135,7 +140,7 @@ def main():
             log.critical(f"Requested tag '{args.latest_tag}' not found")
             sys.exit(1)
 
-        log.debug(f"Found requested '{requested}' tag")
+        log.debug(f"Found requested '{requested}' tag in manifest")
 
     package = None
 
@@ -147,8 +152,6 @@ def main():
         log.critical(f"Unable to find a package url for '{requested}'")
         sys.exit(1)
 
-    log.debug(f"Found package url: {package['url']}")
-
     manifest = get_manifest_from_url(package["url"])
     server = manifest.get("downloads").get("server")
     url = server.get("url")
@@ -158,7 +161,9 @@ def main():
         args.dest_path = os.path.dirname(args.dest_path)
 
     filename = (
-        args.dest_path + "/" + f"minecraft_server-{package['type']}-{package['id']}.jar"
+        args.dest_path
+        + "/"
+        + f"minecraft_server-{package.get('type')}-{package.get('id')}.jar"
     )
 
     if download_and_verify_file_from_url(url, filename, sha1):
@@ -173,7 +178,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         stream=sys.stderr,
         datefmt="%H:%M:%S",
-        format="%(asctime)s [%(levelname)s] " "%(message)s",
+        format="%(asctime)s [%(levelname)s]: " "%(message)s",
     )
 
     log = logging.getLogger(__name__)
