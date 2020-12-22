@@ -58,8 +58,6 @@ def download_and_verify_file_from_url(url: str, filename: str, checksum: str) ->
         return True
     else:
         log.warning(f"'{filename}' does not match expected checksum '{checksum}'")
-        os.remove(filename)
-        log.debug(f"Removed '{filename}'")
         return False
 
 
@@ -113,6 +111,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def exit_with_critical(msg: str) -> None:
+    log.critical(msg)
+    sys.exit(1)
+
+
 def main():
     args = parse_args()
 
@@ -133,14 +136,15 @@ def main():
 
     if args.latest_tag:
         if requested == "release":
-            requested = manifest.get("latest").get("release")
+            requested = manifest.get("latest", dict()).get("release", None)
         elif requested == "snapshot":
-            requested = manifest.get("latest").get("snapshot")
+            requested = manifest.get("latest", dict()).get("snapshot", None)
         else:
-            log.critical(f"Requested tag '{args.latest_tag}' not found")
-            sys.exit(1)
-
+            exit_with_critical(f"Requested tag '{requested}' not found")
         log.debug(f"Found requested '{requested}' tag in manifest")
+
+    if not requested:
+        exit_with_critical(f"Unable to parse manifest for '{requested}'")
 
     package = None
 
@@ -149,27 +153,32 @@ def main():
             break
 
     if not package.get("url"):
-        log.critical(f"Unable to find a package url for '{requested}'")
-        sys.exit(1)
+        exit_with_critical(f"Unable to find a package url for '{requested}'")
 
     manifest = get_manifest_from_url(package["url"])
-    server = manifest.get("downloads").get("server")
+    server = manifest.get("downloads", dict()).get("server", None)
+
+    if not server:
+        exit_with_critical(f"Unable to parse manifest for '{requested}'")
+
     url = server.get("url")
     sha1 = server.get("sha1")
 
     if args.dest_path.endswith("/"):
         args.dest_path = os.path.dirname(args.dest_path)
 
+    package_type = package.get("type")
+    package_id = package.get("id")
+
     filename = (
-        args.dest_path
-        + "/"
-        + f"minecraft_server-{package.get('type')}-{package.get('id')}.jar"
+        args.dest_path + "/" + f"minecraft_server-{package_type}-{package_id}.jar"
     )
 
-    if download_and_verify_file_from_url(url, filename, sha1):
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    if not download_and_verify_file_from_url(url, filename, sha1):
+        os.remove(filename)
+        exit_with_critical(f"Verification failed. Removed '{filename}'")
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
