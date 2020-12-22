@@ -14,8 +14,8 @@ function main() {
 
     # Linux/macOS interop
     mkdir \
-        -p \ # --parents \
-        -v \ # --verbose \
+        -p \
+        -v \
             "${destdir}"
 
     curl "${url}" \
