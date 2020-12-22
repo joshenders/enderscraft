@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 
-from typing import Any, Type
+from typing import Any
 
 VERSION_MANIFEST_URL = os.environ.get(
     "VERSION_MANIFEST_URL",
