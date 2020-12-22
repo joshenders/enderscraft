@@ -75,7 +75,6 @@ def exception_handler(
 
 
 def parse_args() -> argparse.Namespace:
-    """Returns args object with parsed args"""
     progname = os.path.basename(sys.argv[0])
     parser = argparse.ArgumentParser(prog=progname)
     group = parser.add_mutually_exclusive_group(required=True)
@@ -116,7 +115,7 @@ def exit_with_critical(msg: str) -> None:
     sys.exit(1)
 
 
-def main():
+def main() -> None:
     args = parse_args()
 
     if args.debug_flag:
