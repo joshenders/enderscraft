@@ -5,12 +5,12 @@ import hashlib
 import urllib.request
 import json
 import logging
+import os
 import sys
 
-from os import path, environ
 from typing import Any
 
-VERSION_MANIFEST_URL = environ.get(
+VERSION_MANIFEST_URL = os.environ.get(
     "VERSION_MANIFEST_URL",
     "https://launchermeta.mojang.com/mc/game/version_manifest.json",
 )
@@ -58,6 +58,8 @@ def download_and_verify_file_from_url(url: str, filename: str, checksum: str) ->
         return True
     else:
         log.warning(f"'{filename}' does not match expected checksum '{checksum}'")
+        os.remove(filename)
+        log.debug(f"Removed '{filename}'")
         return False
 
 
@@ -71,7 +73,7 @@ def exception_handler(exception_type, exception, traceback, debug_hook=sys.excep
 
 def parse_args() -> argparse.Namespace:
     """Returns args object with parsed args"""
-    progname = path.basename(sys.argv[0])
+    progname = os.path.basename(sys.argv[0])
     parser = argparse.ArgumentParser(prog=progname)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -153,7 +155,7 @@ def main():
     sha1 = server.get("sha1")
 
     if args.dest_path.endswith("/"):
-        args.dest_path = path.dirname(args.dest_path)
+        args.dest_path = os.path.dirname(args.dest_path)
 
     filename = (
         args.dest_path + "/" + f"minecraft_server-{package['type']}-{package['id']}.jar"
