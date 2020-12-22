@@ -2,8 +2,9 @@
 
 set -ex
 
-# This file exists for the purpose of avoiding installing software-properties-common and
-# gnupg-agent in the container just to run 'add-apt-repository'.
+# This file exists for the purpose of avoiding installing
+# software-properties-common and gnupg-agent in the container just to run
+# 'add-apt-repository'.
 
 function main() {
     # https://docs.aws.amazon.com/corretto/
