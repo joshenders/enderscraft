@@ -6,7 +6,7 @@ BUILD_DIR    := $(PWD)
 SCRIPT_DIR   := $(BUILD_DIR)/src
 
 # Docker
-BASE_IMAGE := $(BUILD_DIR)/docker
+BASE_IMAGE := $(BUILD_DIR)/docker/debian-slim
 IMAGE_ROOT := $(BASE_IMAGE)/files
 DATA_DIR   := /data
 
@@ -23,6 +23,7 @@ VERSION_MANIFEST_URL := https://launchermeta.mojang.com/mc/game/version_manifest
 LATEST_TAG  := release
 LISTEN_PORT := 25565
 RCON_PORT   := 25575
+
 
 .PHONY: all
 all:
@@ -59,7 +60,8 @@ download-minecraft-server:
 
 .PHONY: update-aws-apt-key
 update-aws-apt-key:
-	$(SCRIPT_DIR)/sh/update-aws-apt-key.sh
+	$(SCRIPT_DIR)/sh/update-aws-apt-key.sh \
+		$(IMAGE_ROOT)
 
 # .PHONY: help
 # help:

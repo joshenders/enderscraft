@@ -7,21 +7,16 @@ set -ex
 
 function main() {
     # https://docs.aws.amazon.com/corretto/
+    local image_root="${1:-$IMAGE_ROOT}"
     local url="https://apt.corretto.aws/corretto.key"
-    local destdir="${BUILD_DIR:-$PWD}/docker/files/usr/local/share/keyrings"
+    local destdir="${image_root:?}/usr/local/share/keyrings"
     local outfile="${destdir}/apt.corretto.aws.gpg"
 
-    if [[ $(uname -s) == 'Darwin' ]]; then
-        mkdir \
-            -p \
-            -v \
-                "${destdir}"
-    elif [[ $(uname -s) == 'Linux' ]]; then
-        mkdir \
-            --parents \
-            --verbose \
-                "${destdir}"
-    fi
+    # Linux/macOS interop
+    mkdir \
+        -p \ # --parents \
+        -v \ # --verbose \
+            "${destdir}"
 
     curl "${url}" \
     | gpg --dearmor \
