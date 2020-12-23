@@ -25,6 +25,19 @@ class UniqueStore(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
+def exception_handler(
+    exception_type,
+    exception,
+    traceback,
+    debug_hook=sys.excepthook,
+) -> None:
+    args = parse_args()
+    if args.debug_flag:
+        debug_hook(exception_type, exception, traceback)
+    else:
+        print(f"{exception_type.__name__}: {exception}")
+
+
 def get_manifest_from_url(url: str) -> Any:
     log.debug(f"Downloading manifest from url: '{url}'")
     resp = urllib.request.urlopen(url)
@@ -59,19 +72,6 @@ def download_and_verify_file_from_url(url: str, filename: str, checksum: str) ->
     else:
         log.warning(f"'{filename}' does not match expected checksum '{checksum}'")
         return False
-
-
-def exception_handler(
-    exception_type,
-    exception,
-    traceback,
-    debug_hook=sys.excepthook,
-) -> None:
-    args = parse_args()
-    if args.debug_flag:
-        debug_hook(exception_type, exception, traceback)
-    else:
-        print(f"{exception_type.__name__}: {exception}")
 
 
 def parse_args() -> argparse.Namespace:
