@@ -1,35 +1,20 @@
-FROM debian:buster-slim as debian-corretto-base
+FROM debian:buster-slim
 
 LABEL org.opencontainers.image.authors="Josh Enders <josh.enders@gmail.com>"
 
 # KLUDGE: debian-slim variants do not have man page dirs (which causes
-# 'update-alternatives' to fail) -- https://github.com/debuerreotype/debuerreotype/issues/10
+# 'update-alternatives' to fail due to missing /usr/share/man/man1)
+# https://github.com/debuerreotype/debuerreotype/issues/10
 
 ARG JAVA_PACKAGE
 ARG JAVA_DIR
 ARG JAVA_HOME
-ARG JAVA_MODULE_SED_EXPRESSION
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+COPY files /
+
 RUN     set -x \
-    &&  apt-get update \
-    &&  apt-get install \
-            --assume-yes \
-            --no-install-recommends \
-                binutils \
-                curl \
-                ca-certificates \
-                fontconfig \
-                gnupg \
-                software-properties-common \
-    &&  curl \
-            --fail \
-            --location \
-                https://apt.corretto.aws/corretto.key \
-        | apt-key add - \
-    &&  add-apt-repository \
-                'deb https://apt.corretto.aws stable main' \
     &&  mkdir \
             --parents \
             --verbose \
@@ -38,10 +23,28 @@ RUN     set -x \
     &&  apt-get install \
             --assume-yes \
             --no-install-recommends \
+                binutils \
+                ca-certificates \
+                curl \
+                fontconfig \
+                gnupg \
+    &&  curl \
+            --fail \
+            --location \
+                https://apt.corretto.aws/corretto.key \
+        | gpg \
+            --dearmor > /usr/share/keyrings/apt.corretto.aws.gpg \
+    &&  echo \
+            'deb [signed-by=/usr/share/keyrings/apt.corretto.aws.gpg] https://apt.corretto.aws stable main' \
+        > /etc/apt/sources.list.d/apt.coretto.aws.list \
+    &&  apt-get update \
+    &&  apt-get install \
+            --assume-yes \
+            --no-install-recommends \
                 "${JAVA_PACKAGE}" \
     &&  jlink \
             --add-modules "$(java --list-modules \
-                             | sed -e "${JAVA_MODULE_SED_EXPRESSION}" \
+                             | sed -e 's/@[0-9][0-9].*$/,/' \
                              | tr -d \\n)" \
             --no-man-pages \
             --no-header-files \
@@ -61,13 +64,12 @@ RUN     set -x \
                 binutils \
                 curl \
                 gnupg \
-                software-properties-common \
     &&  apt-get clean \
             --assume-yes \
     &&  rm \
             --recursive \
             --force \
-                /var/lib/apt/lists/* \
+                /var/lib/apt/lists/*
 
 ENV LANG C.UTF-8
 ENV JAVA_HOME="${JAVA_HOME}"

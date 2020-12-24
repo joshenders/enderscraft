@@ -1,5 +1,0 @@
-Types: deb
-URIs: https://apt.corretto.aws
-Suites: stable
-Components: main
-Signed-By: /usr/local/share/keyrings/apt.corretto.aws.gpg

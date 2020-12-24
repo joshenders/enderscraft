@@ -4,10 +4,7 @@
 # Python
 *.pyc
 __pycache__
-.mypy_cache/
+.mypy_cache
 
 # Java
 *.jar
-
-# other
-*.gpg

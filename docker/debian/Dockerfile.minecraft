@@ -1,4 +1,4 @@
-FROM debian-base
+FROM debian-corretto-base:latest
 
 LABEL org.opencontainers.image.authors="Josh Enders <josh.enders@gmail.com>"
 

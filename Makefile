@@ -10,6 +10,10 @@ BASE_IMAGE := $(BUILD_DIR)/docker/debian
 IMAGE_ROOT := $(BASE_IMAGE)/files
 DATA_DIR   := /data
 
+# Deployment
+SHORT_COMMIT := $(shell git rev-parse --short HEAD)
+LONG_COMMIT  := $(shell git rev-parse HEAD)
+
 # Container
 SERVICE_USER  := minecraft
 SERVICE_GROUP := minecraft
@@ -20,7 +24,6 @@ JAVA_MAJOR_VERSION := 15
 JAVA_DIR           := java-$(JAVA_MAJOR_VERSION)-amazon-corretto
 JAVA_PACKAGE       := $(JAVA_DIR)-jdk
 JAVA_HOME          := /usr/lib/jvm/$(JAVA_DIR)
-JAVA_MODULE_SED_EXPRESSION := s/@$(JAVA_MAJOR_VERSION).*/,/
 
 # Minecraft
 VERSION_MANIFEST_URL := https://launchermeta.mojang.com/mc/game/version_manifest.json
@@ -31,23 +34,24 @@ RCON_PORT   := 25575
 
 .PHONY: all
 all:
+	make build-corretto-base
 	make prepare-image-root
-	make build-base
+	make build-minecraft
 
 
-.PHONY: build-base
-build-base:
+.PHONY: build-corretto-base
+build-corretto-base:
 	docker build \
 		--build-arg JAVA_PACKAGE=$(JAVA_PACKAGE) \
 		--build-arg JAVA_DIR=$(JAVA_DIR) \
 		--build-arg JAVA_HOME=$(JAVA_HOME) \
-		--build-arg JAVA_MODULE_SED_EXPRESSION=$(JAVA_MODULE_SED_EXPRESSION) \
 		--build-arg JAVA_PACKAGE=$(JAVA_PACKAGE) \
-		--file "$(BASE_IMAGE)"/Dockerfile.base \
+        --tag debian-corretto-base \
+		--file "$(BASE_IMAGE)"/Dockerfile.corretto-base \
 			"$(BASE_IMAGE)"
 
 
-.PHONY: build-minecraft:
+.PHONY: build-minecraft
 build-minecraft:
 	docker build \
 		--build-arg DATA_DIR=$(DATA_DIR) \
@@ -56,28 +60,24 @@ build-minecraft:
 		--build-arg SERVICE_HOME=$(SERVICE_HOME) \
 		--build-arg LISTEN_PORT=$(LISTEN_PORT) \
 		--build-arg RCON_PORT=$(RCON_PORT) \
+		--tag enderscraft \
+		--file "$(BASE_IMAGE)"/Dockerfile.minecraft \
 			"$(BASE_IMAGE)"
 
 
-.PHONE: prepare-image-root
+.PHONY: prepare-image-root
 prepare-image-root:
 	make download-minecraft-server
-	make update-aws-apt-key
 
 
 .PHONY: download-minecraft-server
 download-minecraft-server:
-	$(SCRIPT_DIR)/py/download-minecraft-server.py \
+	$(SCRIPT_DIR)/download-minecraft-server.py \
 		--debug \
 		--latest $(LATEST_TAG) \
 			"$(IMAGE_ROOT)$(SERVICE_HOME)"
 
 
-.PHONY: update-aws-apt-key
-update-aws-apt-key:
-	$(SCRIPT_DIR)/sh/update-aws-apt-key.sh \
-		"$(IMAGE_ROOT)"
-
-
 # .PHONY: help
 # help:
+
