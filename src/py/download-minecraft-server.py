@@ -2,11 +2,12 @@
 
 import argparse
 import hashlib
-import urllib.request
 import json
 import logging
 import os
 import sys
+import time
+import urllib.request
 
 from typing import Any
 
@@ -177,10 +178,12 @@ def main() -> None:
         os.remove(filename)
         exit_with_critical(f"Verification failed. Removed '{filename}'")
 
+    log.debug(f"Finished in {round(time.time() - begin, 4)} seconds")
     sys.exit(0)
 
 
 if __name__ == "__main__":
+    begin = time.time()
     sys.excepthook = exception_handler
 
     logging.basicConfig(
