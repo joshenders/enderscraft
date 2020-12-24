@@ -44,8 +44,8 @@ RUN     set -x \
                 "${JAVA_PACKAGE}" \
     &&  jlink \
             --add-modules "$(java --list-modules \
-                             | sed -e 's/@[0-9].*$/,/' \
-                             | tr -d \\n)" \
+                             | sed --expression 's/@[0-9].*$/,/' \
+                             | tr --delete \\n)" \
             --no-man-pages \
             --no-header-files \
             --strip-debug \
