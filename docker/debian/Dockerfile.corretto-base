@@ -15,10 +15,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 COPY files /
 
 RUN     set -x \
-    &&  mkdir \
-            --parents \
-            --verbose \
-                /usr/share/man/man1 \
     &&  apt-get update \
     &&  apt-get install \
             --assume-yes \
@@ -36,7 +32,11 @@ RUN     set -x \
             --dearmor > /usr/share/keyrings/apt.corretto.aws.gpg \
     &&  echo \
             'deb [signed-by=/usr/share/keyrings/apt.corretto.aws.gpg] https://apt.corretto.aws stable main' \
-        > /etc/apt/sources.list.d/apt.coretto.aws.list \
+        > /etc/apt/sources.list.d/apt.corretto.aws.list \
+    &&  mkdir \
+            --parents \
+            --verbose \
+                /usr/share/man/man1 \
     &&  apt-get update \
     &&  apt-get install \
             --assume-yes \

@@ -46,7 +46,7 @@ build-corretto-base:
 		--build-arg JAVA_DIR=$(JAVA_DIR) \
 		--build-arg JAVA_HOME=$(JAVA_HOME) \
 		--build-arg JAVA_PACKAGE=$(JAVA_PACKAGE) \
-        --tag debian-corretto-base \
+		--tag debian-corretto-base \
 		--file "$(BASE_IMAGE)"/Dockerfile.corretto-base \
 			"$(BASE_IMAGE)"
 
