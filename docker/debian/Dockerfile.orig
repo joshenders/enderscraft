@@ -1,27 +1,3 @@
-FROM debian:buster-slim as debian-base
-
-LABEL org.opencontainers.image.authors="Josh Enders <josh.enders@gmail.com>"
-
-RUN apt-get update \
-    && apt-get install \
-    --assume-yes \
-    --no-install-recommends \
-    ca-certificates \
-    python3-minimal \
-    && apt-get clean \
-    --assume-yes \
-    && rm \
-    --recursive \
-    --force \
-    /var/lib/apt/lists/*
-
-# KLUDGE: debian-slim variants do not have man page dirs (which causes
-# 'update-alternatives' to fail) -- https://github.com/debuerreotype/debuerreotype/issues/10
-RUN mkdir \
-    --parents \
-    --verbose \
-    /usr/share/man/man1
-
 FROM debian-base
 
 LABEL org.opencontainers.image.authors="Josh Enders <josh.enders@gmail.com>"

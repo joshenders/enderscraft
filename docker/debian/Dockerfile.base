@@ -1,0 +1,73 @@
+FROM debian:buster-slim as debian-corretto-base
+
+LABEL org.opencontainers.image.authors="Josh Enders <josh.enders@gmail.com>"
+
+# KLUDGE: debian-slim variants do not have man page dirs (which causes
+# 'update-alternatives' to fail) -- https://github.com/debuerreotype/debuerreotype/issues/10
+
+ARG JAVA_PACKAGE
+ARG JAVA_DIR
+ARG JAVA_HOME
+ARG JAVA_MODULE_SED_EXPRESSION
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN     set -x \
+    &&  apt-get update \
+    &&  apt-get install \
+            --assume-yes \
+            --no-install-recommends \
+                binutils \
+                curl \
+                ca-certificates \
+                fontconfig \
+                gnupg \
+                software-properties-common \
+    &&  curl \
+            --fail \
+            --location \
+                https://apt.corretto.aws/corretto.key \
+        | apt-key add - \
+    &&  add-apt-repository \
+                'deb https://apt.corretto.aws stable main' \
+    &&  mkdir \
+            --parents \
+            --verbose \
+                /usr/share/man/man1 \
+    &&  apt-get update \
+    &&  apt-get install \
+            --assume-yes \
+            --no-install-recommends \
+                "${JAVA_PACKAGE}" \
+    &&  jlink \
+            --add-modules "$(java --list-modules \
+                             | sed -e "${JAVA_MODULE_SED_EXPRESSION}" \
+                             | tr -d \\n)" \
+            --no-man-pages \
+            --no-header-files \
+            --strip-debug \
+            --output "/tmp/${JAVA_DIR}-slim" \
+    &&  rm \
+            --recursive \
+            --force \
+                "${JAVA_HOME}" \
+    &&  mv \
+            "/tmp/${JAVA_DIR}-slim" \
+            "${JAVA_HOME}" \
+    &&  apt-get purge \
+            --assume-yes \
+            --auto-remove \
+            --option APT::AutoRemove::RecommendsImportant=false \
+                binutils \
+                curl \
+                gnupg \
+                software-properties-common \
+    &&  apt-get clean \
+            --assume-yes \
+    &&  rm \
+            --recursive \
+            --force \
+                /var/lib/apt/lists/* \
+
+ENV LANG C.UTF-8
+ENV JAVA_HOME="${JAVA_HOME}"
