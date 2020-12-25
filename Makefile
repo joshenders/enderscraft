@@ -6,7 +6,7 @@ BUILD_DIR    := $(PWD)
 SCRIPT_DIR   := $(BUILD_DIR)/src
 
 # Docker
-BASE_IMAGE := $(BUILD_DIR)/docker/debian
+BASE_IMAGE := $(BUILD_DIR)/docker/debian/base-corretto
 IMAGE_ROOT := $(BASE_IMAGE)/files
 DATA_DIR   := /data
 
@@ -28,40 +28,40 @@ JAVA_HOME          := /usr/lib/jvm/$(JAVA_DIR)
 # Minecraft
 VERSION_MANIFEST_URL := https://launchermeta.mojang.com/mc/game/version_manifest.json
 LATEST_TAG  := release
-LISTEN_PORT := 25565
+SERVICE_PORT := 25565
 RCON_PORT   := 25575
+#ACCEPT_EULA := # minecraft server creats and then source this file or eval
 
 
 .PHONY: all
 all:
-	make build-corretto-base
+	make build-base-corretto
 	make prepare-image-root
 	make build-minecraft
 
 
-.PHONY: build-corretto-base
-build-corretto-base:
+.PHONY: build-base-corretto
+build-base-corretto:
 	docker build \
-		--build-arg JAVA_PACKAGE=$(JAVA_PACKAGE) \
 		--build-arg JAVA_DIR=$(JAVA_DIR) \
 		--build-arg JAVA_HOME=$(JAVA_HOME) \
 		--build-arg JAVA_PACKAGE=$(JAVA_PACKAGE) \
-		--tag debian-corretto-base \
-		--file "$(BASE_IMAGE)"/Dockerfile.corretto-base \
+		--build-arg JAVA_PACKAGE=$(JAVA_PACKAGE) \
+		--tag debian-base-corretto \
 			"$(BASE_IMAGE)"
 
 
 .PHONY: build-minecraft
 build-minecraft:
 	docker build \
+		--build-arg ACCEPT_EULA=$(ACCEPT_EULA) \
 		--build-arg DATA_DIR=$(DATA_DIR) \
-		--build-arg SERVICE_USER=$(SERVICE_USER) \
+		--build-arg RCON_PORT=$(RCON_PORT) \
 		--build-arg SERVICE_GROUP=$(SERVICE_GROUP) \
 		--build-arg SERVICE_HOME=$(SERVICE_HOME) \
-		--build-arg LISTEN_PORT=$(LISTEN_PORT) \
-		--build-arg RCON_PORT=$(RCON_PORT) \
-		--tag enderscraft \
-		--file "$(BASE_IMAGE)"/Dockerfile.minecraft \
+		--build-arg SERVICE_PORT=$(SERVICE_PORT) \
+		--build-arg SERVICE_USER=$(SERVICE_USER) \
+		--tag $(PROJECT_NAME) \
 			"$(BASE_IMAGE)"
 
 

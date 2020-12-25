@@ -20,7 +20,7 @@ Provide mechanism to select JVM
   - Remove bad opinions from upstream docker container
   - Layer in mods (computercraft, etc)
   - Layer in custom configuration
-- Buildkite pipeline to build forked docker container
+- Travis? pipeline to build forked docker container
   - build
   - test
   - push to ECS
