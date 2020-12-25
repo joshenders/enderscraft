@@ -10,7 +10,7 @@ ARG SERVICE_USER
 
 COPY files /
 
-RUN set -x \
+RUN     set -x \
     &&  useradd \
             --system \
             --shell /usr/sbin/nologin \
@@ -21,18 +21,16 @@ RUN set -x \
                 "${SERVICE_USER}:${SERVICE_GROUP}" \
                 "${SERVICE_HOME}" \
     &&  chmod \
-             ug+x \
-                healthcheck.sh \
-                entrypoint.sh
+            +x \
+                "/healthcheck.sh" \
+                "/entrypoint.sh"
 
-# rcon-cli
-# mc-monitor
-# mc-server-runner
+ENV SERVICE_HOME="${SERVICE_HOME}" \
+    ACCEPT_EULA="${ACCEPT_EULA}"
 
-# ENV
-USER "${SERVICE_USER}"
 WORKDIR "${SERVICE_HOME}"
 VOLUME ["${DATA_DIR}"]
 EXPOSE ${SERVICE_PORT} ${RCON_PORT}
-ENTRYPOINT [ "/entrypoint.sh" ]
-HEALTHCHECK --start-period=1m CMD /healthcheck.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+HEALTHCHECK --start-period=1m CMD "/healthcheck.sh"

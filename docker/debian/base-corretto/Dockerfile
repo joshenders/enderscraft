@@ -32,7 +32,7 @@ RUN     set -x \
             --dearmor > /usr/share/keyrings/apt.corretto.aws.gpg \
     &&  echo \
             'deb [signed-by=/usr/share/keyrings/apt.corretto.aws.gpg] https://apt.corretto.aws stable main' \
-        > /etc/apt/sources.list.d/apt.corretto.aws.list \
+        | tee /etc/apt/sources.list.d/apt.corretto.aws.list \
     &&  mkdir \
             --parents \
             --verbose \

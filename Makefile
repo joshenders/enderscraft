@@ -6,9 +6,11 @@ BUILD_DIR    := $(PWD)
 SCRIPT_DIR   := $(BUILD_DIR)/src
 
 # Docker
-BASE_IMAGE := $(BUILD_DIR)/docker/debian/base-corretto
-IMAGE_ROOT := $(BASE_IMAGE)/files
-DATA_DIR   := /data
+BASE_IMAGE         := $(BUILD_DIR)/docker/debian/base-corretto
+BASE_IMAGE_ROOT    := $(BASE_IMAGE)/files
+SERVICE_IMAGE      := $(BUILD_DIR)/docker/debian/enderscraft
+SERVICE_IMAGE_ROOT := $(SERVICE_IMAGE)/files
+DATA_DIR           := /data
 
 # Deployment
 SHORT_COMMIT := $(shell git rev-parse --short HEAD)
@@ -27,17 +29,16 @@ JAVA_HOME          := /usr/lib/jvm/$(JAVA_DIR)
 
 # Minecraft
 VERSION_MANIFEST_URL := https://launchermeta.mojang.com/mc/game/version_manifest.json
-LATEST_TAG  := release
-SERVICE_PORT := 25565
-RCON_PORT   := 25575
-#ACCEPT_EULA := # minecraft server creats and then source this file or eval
+LATEST_TAG           := release
+SERVICE_PORT         := 25565
+RCON_PORT            := 25575
 
 
 .PHONY: all
 all:
 	make build-base-corretto
 	make prepare-image-root
-	make build-minecraft
+	make build-enderscraft
 
 
 .PHONY: build-base-corretto
@@ -51,8 +52,8 @@ build-base-corretto:
 			"$(BASE_IMAGE)"
 
 
-.PHONY: build-minecraft
-build-minecraft:
+.PHONY: build-enderscraft
+build-enderscraft:
 	docker build \
 		--build-arg ACCEPT_EULA=$(ACCEPT_EULA) \
 		--build-arg DATA_DIR=$(DATA_DIR) \
@@ -62,7 +63,7 @@ build-minecraft:
 		--build-arg SERVICE_PORT=$(SERVICE_PORT) \
 		--build-arg SERVICE_USER=$(SERVICE_USER) \
 		--tag $(PROJECT_NAME) \
-			"$(BASE_IMAGE)"
+			"$(SERVICE_IMAGE)"
 
 
 .PHONY: prepare-image-root
@@ -75,9 +76,21 @@ download-minecraft-server:
 	$(SCRIPT_DIR)/download-minecraft-server.py \
 		--debug \
 		--latest $(LATEST_TAG) \
-			"$(IMAGE_ROOT)$(SERVICE_HOME)"
+			"$(SERVICE_IMAGE_ROOT)$(SERVICE_HOME)"
+
+
+.PHONY: clean
+clean:
+	find . \
+		-type f \
+		\(\
+			-name "minecraft_server-*.jar" \
+			-o \
+			-name "server.properties" \
+		\)\
+		-print \
+		-delete
 
 
 # .PHONY: help
 # help:
-

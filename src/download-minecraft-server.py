@@ -48,12 +48,16 @@ def get_manifest_from_url(url: str) -> Any:
 
 
 def download_and_verify_file_from_url(url: str, filename: str, checksum: str) -> bool:
-    with open(filename, "wb") as f:
-        log.debug(f"Downloading file: '{url}'")
-        resp = urllib.request.urlopen(url)
-        size = resp.length
-        f.write(resp.read())
-        log.debug(f"Wrote {size} bytes to '{filename}'")
+    if not os.path.exists(filename):
+        with open(filename, "wb") as f:
+            log.debug(f"Downloading file: '{url}'")
+            resp = urllib.request.urlopen(url)
+            size = resp.length
+            f.write(resp.read())
+            log.debug(f"Wrote {size} bytes to '{filename}'")
+    else:
+        size = os.stat(filename).st_size
+        log.warning(f"File of size {size} bytes already exists at destination")
 
     hasher = hashlib.sha1()
 

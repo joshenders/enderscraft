@@ -28,9 +28,11 @@ Provide mechanism to select JVM
   - Either cloudformation or fargate cli
   - IAM
 - Custom scripts
+  - docker healthcheck
   - docker entrypoint
     - https://aikar.co/2018/07/02/tuning-the-jvm-g1gc-garbage-collector-flags-for-minecraft/
   - Sleep 30 mins after last player disconnects
+  -  monitor
   - Restore from S3 on startup
   - Snapshot backup to S3 every 5 min
     - via rcon https://minecraft.gamepedia.com/Commands/save
