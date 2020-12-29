@@ -16,7 +16,7 @@ VERSION_MANIFEST_URL = os.environ.get(
     "https://launchermeta.mojang.com/mc/game/version_manifest.json",
 )
 
-BLOCKSIZE = 65536
+READ_BLOCKSIZE = 65536
 
 
 class UniqueStore(argparse.Action):
@@ -63,10 +63,10 @@ def download_and_verify_file_from_url(url: str, filename: str, checksum: str) ->
 
     with open(filename, "rb") as f:
         log.debug(f"Calculating checksum for file: '{filename}'")
-        buffer = f.read(BLOCKSIZE)
+        buffer = f.read(READ_BLOCKSIZE)
         while len(buffer) > 0:
             hasher.update(buffer)
-            buffer = f.read(BLOCKSIZE)
+            buffer = f.read(READ_BLOCKSIZE)
 
     sha1sum = hasher.hexdigest()
     log.debug(f"Calculated checksum '{sha1sum}'")

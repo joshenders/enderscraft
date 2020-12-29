@@ -1,0 +1,219 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Enderscraft AWS Public VPC Stack
+Metadata:
+  License: CC BY-NC 4.0
+
+Parameters:
+  ParameterVPCCIDRBlock:
+    Description: "VPC CIDR Block"
+    Type: String
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: "10.0.0.0/24"
+
+  ParameterSubnetPublicCIDR:
+    Description: "Public Subnet CIDR Block"
+    Type: String
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: "10.0.0.0/26"
+
+  ParameterMinecraftPort:
+    Description: "Minecraft port"
+    Type: String
+    AllowedPattern: '\d{1,5}'
+    Default: "25565"
+
+  ParameterRCONPort:
+    Description: "RCON port"
+    Type: String
+    AllowedPattern: '\d{1,5}'
+    Default: "25575"
+
+  ParameterIAMGroup:
+    Description: "IAM Group"
+    Type: String
+    Default: "enderscraft"
+
+  # ParameterIAMUser:
+  #   Description: "IAM User"
+  #   Type: String
+
+Resources:
+  # # DNS
+  # HostedZone:
+  #   Type: AWS::Route53::HostedZone
+  #   Properties:
+  #     Name:
+  #       Ref: ParameterHostedZone
+  
+  # The zone data is best imported from a zonefile.
+  # https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating-import.html
+
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref ParameterVPCCIDRBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-VPC
+
+  # Network Gateways
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    DependsOn: VPC
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Network ACLs
+  NetworkAclDefault:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-NetworkAclDefault
+
+  # Public Subnet
+  SubnetPublic:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref ParameterSubnetPublicCIDR
+      AvailabilityZone: !Select [0, !GetAZs ]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-SubnetPublic
+
+  RouteTableSubnetPublic:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-RouteTableSubnetPublic
+
+  RouteSubnetPublicDefault:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref RouteTableSubnetPublic
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociationSubnetPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref SubnetPublic
+      RouteTableId: !Ref RouteTableSubnetPublic
+
+  # Security Groups
+  SecurityGroupFargateTasks:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Security Group for Fargate Tasks
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: !Sub "Allow traffic on port ${ParameterMinecraftPort}"
+          FromPort: !Ref ParameterMinecraftPort
+          IpProtocol: tcp
+          ToPort: !Ref ParameterMinecraftPort
+
+        - CidrIp: 0.0.0.0/0
+          Description: !Sub "Allow traffic on port ${ParameterRCONPort}"
+          FromPort: !Ref ParameterRCONPort
+          IpProtocol: tcp
+          ToPort: !Ref ParameterRCONPort
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-SecurityGroupFargateTasks
+
+  # IAM
+  IAMPolicyFargateCLI:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: FargateCLIPolicy
+      Groups:
+        - !Ref ParameterIAMGroup
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - "acm:ListCertificates"
+              - "ec2:DescribeNetworkInterfaces"
+              - "ecs:CreateCluster"
+              - "ecs:DescribeTaskDefinition"
+              - "ecs:ListServices"
+              - "ecs:ListTasks"
+              - "ecs:RegisterTaskDefinition"
+              - "elasticloadbalancing:DescribeLoadBalancers"
+            Resource: '*'
+
+          - Effect: Allow
+            Action:
+              - "ecs:RunTask"
+            Resource: !Sub "arn:aws:ecs:*:${AWS::AccountId}:task-definition/*:*"
+
+          - Effect: Allow
+            Action:
+              - "ecs:DescribeTasks"
+              - "ecs:StopTask"
+              - "iam:AttachRolePolicy"
+              - "iam:CreateRole"
+              - "iam:GetRole"
+              - "iam:PassRole"
+              - "logs:CreateLogGroup"
+              - "logs:FilterLogEvents"
+            Resource:
+              - !Sub "arn:aws:ecs:*:${AWS::AccountId}:task/fargate/*"
+              - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+              - !Sub "arn:aws:logs:*:${AWS::AccountId}:log-group:/fargate/*/*:*:"
+
+          - Effect: Allow
+            Action:
+              - "ecs:CreateService"
+              - "ecs:DeleteService"
+              - "ecs:DescribeServices"
+              - "ecs:UpdateService"
+              - "sts:AssumeRole"
+            Resource:
+              - !Sub "arn:aws:ecs:*:${AWS::AccountId}:service/fargate/*"
+              - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+
+  # IAMPolicyD
+  # Type: AWS::IAM::ManagedPolicy
+  # Properties: 
+  #   Description: ""
+  #   Groups: 
+  #     - String
+  #   ManagedPolicyName: AmazonEC2ContainerRegistryPowerUser
+  #   Path: String
+  #   PolicyDocument: Json
+  #   Roles: 
+  #     - String
+  #   Users: 
+  #     - String
+
+  # IAMUser:
+  #   Type: AWS::IAM::User
+  #   Properties:
+  #     LoginProfile:
+  #       Password: !Ref 'Password'
+# Outputs:
+
+# TODO:
+# ECS
