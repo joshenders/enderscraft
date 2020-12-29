@@ -34,20 +34,22 @@ Parameters:
     Type: String
     Default: "enderscraft"
 
+  ParameterHostedZone:
+    Description: "Domain Name"
+    Type: String
+    Default: "enders.games"
+
   # ParameterIAMUser:
   #   Description: "IAM User"
   #   Type: String
 
 Resources:
-  # # DNS
-  # HostedZone:
-  #   Type: AWS::Route53::HostedZone
-  #   Properties:
-  #     Name:
-  #       Ref: ParameterHostedZone
-  
-  # The zone data is best imported from a zonefile.
-  # https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating-import.html
+  # DNS
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name:
+        Ref: ParameterHostedZone
 
   # VPC
   VPC:
@@ -194,26 +196,57 @@ Resources:
               - !Sub "arn:aws:ecs:*:${AWS::AccountId}:service/fargate/*"
               - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
 
-  # IAMPolicyD
-  # Type: AWS::IAM::ManagedPolicy
-  # Properties: 
-  #   Description: ""
-  #   Groups: 
-  #     - String
-  #   ManagedPolicyName: AmazonEC2ContainerRegistryPowerUser
-  #   Path: String
-  #   PolicyDocument: Json
-  #   Roles: 
-  #     - String
-  #   Users: 
-  #     - String
+  # ECR
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${AWS::StackName}
+      ImageScanningConfiguration:
+        scanOnPush: "true"
+      ImageTagMutability: "MUTABLE"
+      LifecyclePolicy:
+        LifecyclePolicyText: |-
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only one untagged image, expire all others",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 1
+                },
+                "action": {
+                  "type": "expire"
+                  }
+                }
+            ]
+          }
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowECSTaskPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+            Action:
+              - "ecr:BatchCheckLayerAvailability"
+              - "ecr:BatchGetImage"
+              - "ecr:DescribeImages"
+              - "ecr:DescribeRepositories"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:ListImages"
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-ECRRepository
+
+  # IAMPolicy:
+  #   Type: AWS::IAM::ManagedPolicy
 
   # IAMUser:
   #   Type: AWS::IAM::User
-  #   Properties:
-  #     LoginProfile:
-  #       Password: !Ref 'Password'
-# Outputs:
 
-# TODO:
-# ECS
+Outputs:
+  Arn:
+    Value: !GetAtt ECRRepository.Arn
