@@ -24,7 +24,7 @@
 
 Enderscraft is free as in beer but you can expect a bill from AWS roughly inline with the table below.
 
-> **Note:** you may incur additional charges for things like: data transfer, log storage, container storage, and backups.
+> **Note:** You may incur additional charges for things like: data transfer, log storage, container storage, and backups.
 
 | per vCPU per hour | per GB of RAM per hour |
 | ----------------- | ---------------------- |
@@ -136,7 +136,7 @@ export AWS_VPC_ID="$(aws --profile 'default' ec2 describe-vpcs --filters "Name=t
 export AWS_SECURITY_GROUP_ID="$(aws --profile 'default' ec2 describe-security-groups --filters "Name=vpc-id,Values=${AWS_VPC_ID}" | jq --raw-output '.SecurityGroups[0].GroupId')"
 ```
 
-Containers can be launched with `fargate` with the following command.
+Containers can be launched with `fargatecli` with the following command.
 
 > **Note:** `--cpu` and `--memory` can be tuned as desired
 
