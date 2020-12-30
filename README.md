@@ -187,13 +187,13 @@ aws \
 ```bash
 .
 ├── cloudformation         # AWS CloudFormation files
-├── docker                 # Docker
-│   ├── alpine             # WIP Alpine-based container
-│   └── debian             # Debian-based container
-│       ├── base-corretto  # Base layer
-│       │   └── files      # Base layer root filesystem
-│       └── enderscraft    # Minecraft layer
-│           └── files      # Minecraft layer root filesystem
+├── docker                 # Docker files
+│   ├── alpine             # WIP Alpine-based containers
+│   └── debian             # Debian-based containers
+│       ├── base-corretto  # Base layer build context
+│       │   └── files      # Base layer root filesystem overlay
+│       └── enderscraft    # Minecraft layer build context
+│           └── files      # Minecraft layer root filesystem overlay
 └── src                    # Build scripts and whatnot
 ```
 
