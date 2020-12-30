@@ -18,7 +18,6 @@
 - Tick fast-forward on resume
 - RCON enabled
 - Remote Debugging via JMX
-- Extensible
 
 ### Pricing
 
