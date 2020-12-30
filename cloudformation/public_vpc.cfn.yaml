@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Enderscraft AWS Public VPC Stack
+Description: Enderscraft Public VPC Stack
 Metadata:
   License: CC BY-NC 4.0
 
@@ -29,19 +29,14 @@ Parameters:
     AllowedPattern: '\d{1,5}'
     Default: "25575"
 
-  ParameterIAMGroup:
-    Description: "IAM Group"
-    Type: String
-    Default: "enderscraft"
-
   ParameterHostedZone:
     Description: "Domain Name"
     Type: String
-    Default: "enders.games"
 
-  # ParameterIAMUser:
-  #   Description: "IAM User"
-  #   Type: String
+  ParameterIAMUser:
+    Description: "IAM User"
+    Type: String
+    Default: "enderscraft"
 
 Resources:
   # DNS
@@ -144,14 +139,38 @@ Resources:
           Value: !Sub ${AWS::StackName}-SecurityGroupFargateTasks
 
   # IAM
+  IAMUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref ParameterIAMUser
+
+  IAMRoleECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: "Role for execution ECS Tasks"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action: sts:AssumeRole
+          Principal:
+            Service: ecs-tasks.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      RoleName: ecsTaskExecutionRole
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-IAMRoleECSTaskExecutionRole
+
   IAMPolicyFargateCLI:
     Type: 'AWS::IAM::Policy'
+    DependsOn: IAMUser
     Properties:
       PolicyName: FargateCLIPolicy
-      Groups:
-        - !Ref ParameterIAMGroup
+      Users: 
+        - !Ref ParameterIAMUser
       PolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Action:
@@ -174,8 +193,6 @@ Resources:
             Action:
               - "ecs:DescribeTasks"
               - "ecs:StopTask"
-              - "iam:AttachRolePolicy"
-              - "iam:CreateRole"
               - "iam:GetRole"
               - "iam:PassRole"
               - "logs:CreateLogGroup"
@@ -199,10 +216,11 @@ Resources:
   # ECR
   ECRRepository:
     Type: AWS::ECR::Repository
+    DependsOn: IAMRoleECSTaskExecutionRole
     Properties:
       RepositoryName: !Sub ${AWS::StackName}
       ImageScanningConfiguration:
-        scanOnPush: "true"
+        scanOnPush: true
       ImageTagMutability: "MUTABLE"
       LifecyclePolicy:
         LifecyclePolicyText: |-
@@ -225,8 +243,7 @@ Resources:
       RepositoryPolicyText:
         Version: "2012-10-17"
         Statement:
-          - Sid: AllowECSTaskPull
-            Effect: Allow
+          - Effect: Allow
             Principal:
               AWS:
                 - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
@@ -240,13 +257,3 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-ECRRepository
-
-  # IAMPolicy:
-  #   Type: AWS::IAM::ManagedPolicy
-
-  # IAMUser:
-  #   Type: AWS::IAM::User
-
-Outputs:
-  Arn:
-    Value: !GetAtt ECRRepository.Arn
