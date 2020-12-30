@@ -1,30 +1,30 @@
 # Enderscraft
 
-[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-391/)[![Code style: black](https://img.shields.io/badge/code%20style-black-black.svg)](https://github.com/psf/black)[![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-391/) [![Code style: black](https://img.shields.io/badge/code%20style-black-black.svg)](https://github.com/psf/black) [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier) [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 ## About
 
-"Enderscraft" is Minecraft™ repackaged for on-demand "serverless" computing. Instead of running a server 24/7, run your server on-demand for pennies an hour. Only pay for the hours that you're playing.
+"Enderscraft" is Minecraft™ repackaged for on-demand serverless computing. Instead of running a server 24/7, run your server on-demand for pennies an hour. Only pay for the hours that you're playing.
 
 ### Features (in-progress or planned)
 
 - Supports all mods and versions
-- Launchable via CLI or Discord bot
-- Scaleable up to 4vCPU and 30GB RAM
 - Deploy to any AWS Region
+- Scaleable up to 4 vCPU and 30GB RAM
+- Launchable via CLI or Discord bot
 - Continuous snapshots with restore on resume
 - Monitoring/Log/Telemetry streaming
 - Auto-DNS record creation in custom domain
-- Auto-Tick advance on resume
+- Tick fast-forward on resume
 - RCON enabled
 - Remote Debugging via JMX
-- Extremely Customizeable
+- Extensible
 
 ### Pricing
 
 Enderscraft is free as in beer but you can expect a bill from AWS roughly inline with the table below.
 
-> **Note:** You may incur additional charges for things like: data transfer, log storage, container storage, and backups.
+> **Note:** You may incur slight additional charges for things like: data transfer, log storage, container storage, and backups.
 
 | per vCPU per hour | per GB of RAM per hour |
 | ----------------- | ---------------------- |
@@ -32,7 +32,7 @@ Enderscraft is free as in beer but you can expect a bill from AWS roughly inline
 
 ### Commerical Use
 
-If you're interested in using this code commercially, please contact me first (Josh Enders <<josh.enders@gmail.com>>). The license does not permit commerical usage.
+This software is not licensed for commerical use. If you're interested in using this code commercially, please contact: Josh Enders <<josh.enders@gmail.com>>.
 
 ## Getting Started
 
@@ -178,8 +178,9 @@ aws \
 ### Style
 
 - [black](https://github.com/psf/black)
-- [shellcheck](https://github.com/koalaman/shellcheck)
 - [cfn-lint](https://github.com/aws-cloudformation/cfn-python-lint)
+- [prettier](https://github.com/prettier/prettier)
+- [shellcheck](https://github.com/koalaman/shellcheck)
 
 ### Directory structure
 
