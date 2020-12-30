@@ -92,10 +92,10 @@ From the root directory of the project, create the CloudFormation stack.
 ```bash
 aws cloudformation create-stack \
     --region "${AWS_REGION}" \
-    --template-body 'file://cloudformation/public_vpc.cfn.yaml' \
+    --template-body "file://cloudformation/public_vpc.cfn.yaml" \
     --stack-name "${PROJECT_NAME}" \
     --parameters "ParameterKey=ParameterHostedZone,ParameterValue=${CUSTOM_DOMAIN}" \
-    --capabilities 'CAPABILITY_NAMED_IAM'
+    --capabilities "CAPABILITY_NAMED_IAM"
 ```
 
 (Optional) It is normal for cloudformation to take a long time. If you'd like some kind of indication of completion, you can run the following command which will block until the stack is available.
@@ -117,7 +117,7 @@ Configure your IAM user with the credentials displayed by the previous step.
 > **_Note:_** `Default region name` is personal choice but accept the default when prompted for `Default output format` .
 
 ```bash
-aws --profile 'enderscraft' configure
+aws --profile "enderscraft" configure
 ```
 
 ### Container Launch
@@ -157,20 +157,20 @@ Delete an image by tag:
 
 ```bash
 aws \
-    --profile 'default'
+    --profile "default"
         ecr batch-delete-image \
             --repository-name "${PROJECT_NAME}" \
-            --image-ids imageTag='latest'
+            --image-ids imageTag="latest"
 ```
 
 Delete an image by digest:
 
 ```bash
 aws \
-    --profile 'default'
+    --profile "default"
         ecr batch-delete-image \
             --repository-name "${PROJECT_NAME}" \
-            --image-ids imageDigest='sha256:ea38a89e...'
+            --image-ids imageDigest="sha256:ea38a89e..."
 ```
 
 ## Contributing
