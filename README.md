@@ -32,7 +32,7 @@ Enderscraft is free as in beer but you can expect a bill from AWS roughly inline
 
 ### Commerical Use
 
-If you're interested in using this code commercially, please contact me first (Josh Enders <josh.enders@gmail.com>). The license does not permit commerical usage.
+If you're interested in using this code commercially, please contact me first (Josh Enders <<josh.enders@gmail.com>>). The license does not permit commerical usage.
 
 ## Getting Started
 
