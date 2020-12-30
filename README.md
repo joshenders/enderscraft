@@ -8,23 +8,23 @@
 
 ### Features (in-progress or planned)
 
-* Supports all mods and versions
-* Launchable via CLI or Discord bot
-* Scaleable up to 4vCPU and 30GB RAM
-* Deploy to any AWS Region
-* Continuous snapshots with restore on resume
-* Monitoring/Log/Telemetry streaming
-* Auto-DNS record creation in custom domain
-* Auto-Tick advance on resume
-* RCON enabled
-* Remote Debugging via JMX
-* Extremely Customizeable
+- Supports all mods and versions
+- Launchable via CLI or Discord bot
+- Scaleable up to 4vCPU and 30GB RAM
+- Deploy to any AWS Region
+- Continuous snapshots with restore on resume
+- Monitoring/Log/Telemetry streaming
+- Auto-DNS record creation in custom domain
+- Auto-Tick advance on resume
+- RCON enabled
+- Remote Debugging via JMX
+- Extremely Customizeable
 
 ### Pricing
 
 Enderscraft is free as in beer but you can expect a bill from AWS roughly inline with the table below.
 
->  **Note:** you may incur additional charges for things like: data transfer, log storage, container storage, and backups.
+> **Note:** you may incur additional charges for things like: data transfer, log storage, container storage, and backups.
 
 | per vCPU per hour | per GB of RAM per hour |
 | ----------------- | ---------------------- |
@@ -42,7 +42,7 @@ Enderscraft is designed to run in AWS on so-called "serverless" infrastructure. 
 
 ## AWS Setup
 
-### 	Dependencies
+### Dependencies
 
 - [aws-cli](https://github.com/aws/aws-cli)
 - [jq](https://stedolan.github.io/jq/)
@@ -65,11 +65,11 @@ aws configure
 
 You should see output similar to this:
 
-```
+```bash
 AWS Access Key ID [********************]:
 AWS Secret Access Key [********************]:
 Default region name [us-east-1]:
-Default output format [None]: 
+Default output format [None]:
 ```
 
 After successfully completing this process, you should have a `[default]` section in your `~/.aws/credentials` file.
@@ -80,7 +80,7 @@ After successfully completing this process, you should have a `[default]` sectio
 
 The following environment variables are required for the rest of the setup process.
 
-> **_Note:_**  A custom domain isn't a strict requirement but it will make connecting to your game a lot easier, as the public IP address will change on each invocation of a container.
+> **_Note:_** A custom domain isn't a strict requirement but it will make connecting to your game a lot easier, as the public IP address will change on each invocation of a container.
 
 ```bash
 export AWS_REGION="$(aws configure get region)"
@@ -114,7 +114,7 @@ aws iam create-access-key --user-name "${PROJECT_NAME}"
 
 Configure your IAM user with the credentials displayed by the previous step.
 
->  **_Note:_**  `Default region name` is personal choice but accept the default when prompted for `Default output format` .
+> **_Note:_** `Default region name` is personal choice but accept the default when prompted for `Default output format` .
 
 ```bash
 aws --profile "enderscraft" configure
@@ -138,7 +138,7 @@ export AWS_SECURITY_GROUP_ID="$(aws --profile 'default' ec2 describe-security-gr
 
 Containers can be launched with `fargate` with the following command.
 
->  **Note:** `--cpu` and `--memory` can be tuned as desired
+> **Note:** `--cpu` and `--memory` can be tuned as desired
 
 ```bash
 AWS_PROFILE=${PROJECT_NAME} \
@@ -158,7 +158,7 @@ fargate task run \
 
 ```bash
 aws \
-	--profile "default"
+    --profile "default"
         ecr batch-delete-image \
             --repository-name "${PROJECT_NAME}" \
             --image-ids imageTag="latest"
@@ -168,7 +168,7 @@ aws \
 
 ```bash
 aws \
-	--profile "default"
+    --profile "default"
         ecr batch-delete-image \
             --repository-name "${PROJECT_NAME}" \
             --image-ids imageDigest="sha256:ea38a89e..."
@@ -178,9 +178,9 @@ aws \
 
 ### Style
 
-* python black
-* shellcheck
-* cfn-lint
+- python black
+- shellcheck
+- cfn-lint
 
 ### Directory structure
 
@@ -201,4 +201,3 @@ aws \
 
 This work is licensed under CC BY-NC version 4.0 [https://creativecommons.org/licenses/by-nc/4.0/](https://creativecommons.org/licenses/by-nc/4.0/)
 © 2020, Josh Enders. Some Rights Reserved.
-
