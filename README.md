@@ -13,7 +13,7 @@
 - Scaleable up to 4 vCPU and 30GB RAM
 - Launchable via CLI or Discord bot
 - Continuous snapshots with restore on resume
-- Monitoring/Log/Telemetry streaming
+- Log/Telemetry streaming for monitoring
 - Auto-DNS record creation in custom domain
 - Tick fast-forward on resume
 - RCON enabled
