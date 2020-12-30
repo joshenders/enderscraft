@@ -83,7 +83,7 @@ The following environment variables are required for the rest of the setup proce
 > **_Note:_** A custom domain isn't a strict requirement but it will make connecting to your game a lot easier, as the public IP address will change on each invocation of a container.
 
 ```bash
-export AWS_REGION="$(aws configure get region)"
+export AWS_REGION="$(aws configure get 'region')"
 export CUSTOM_DOMAIN="example.com"
 ```
 
@@ -91,11 +91,11 @@ From the root directory of the project, create the CloudFormation stack.
 
 ```bash
 aws cloudformation create-stack \
-    --region ${AWS_REGION} \
-    --template-body file://cloudformation/public_vpc.cfn.yaml \
-    --stack-name ${PROJECT_NAME} \
+    --region "${AWS_REGION}" \
+    --template-body 'file://cloudformation/public_vpc.cfn.yaml' \
+    --stack-name "${PROJECT_NAME}" \
     --parameters "ParameterKey=ParameterHostedZone,ParameterValue=${CUSTOM_DOMAIN}" \
-    --capabilities CAPABILITY_NAMED_IAM
+    --capabilities 'CAPABILITY_NAMED_IAM'
 ```
 
 (Optional) It is normal for cloudformation to take a long time. If you'd like some kind of indication of completion, you can run the following command which will block until the stack is available.
@@ -117,7 +117,7 @@ Configure your IAM user with the credentials displayed by the previous step.
 > **_Note:_** `Default region name` is personal choice but accept the default when prompted for `Default output format` .
 
 ```bash
-aws --profile "enderscraft" configure
+aws --profile 'enderscraft' configure
 ```
 
 ### Container Launch
@@ -131,9 +131,8 @@ aws --profile "enderscraft" configure
 The following environment variables are required for the rest of the setup process.
 
 ```bash
-export AWS_SUBNET_ID="$(aws --profile 'default' ec2 describe-subnets --filters "Name=tag:aws:cloudformation:stack-name,Values=${PROJECT_NAME}" | jq --raw-output '.Subnets[0].SubnetId')"
-export AWS_VPC_ID="$(aws --profile 'default' ec2 describe-vpcs --filters "Name=tag:aws:cloudformation:stack-name,Values=${PROJECT_NAME}" | jq --raw-output '.Vpcs[0].VpcId')"
-export AWS_SECURITY_GROUP_ID="$(aws --profile 'default' ec2 describe-security-groups --filters "Name=vpc-id,Values=${AWS_VPC_ID}" | jq --raw-output '.SecurityGroups[0].GroupId')"
+export AWS_SUBNET_ID="$(aws --profile 'default' ec2 describe-subnets --filters "Name=tag:Name,Values=${PROJECT_NAME}-SubnetPublic" | jq --raw-output '.Subnets[0].SubnetId')"
+export AWS_SECURITY_GROUP_ID="$(aws --profile 'default' ec2 describe-security-groups --filters "Name=tag:Name,Values=${PROJECT_NAME}-SecurityGroupFargateTasks" | jq --raw-output '.SecurityGroups[0].GroupId')"
 ```
 
 Containers can be launched with `fargatecli` with the following command.
@@ -141,9 +140,9 @@ Containers can be launched with `fargatecli` with the following command.
 > **Note:** `--cpu` and `--memory` can be tuned as desired
 
 ```bash
-AWS_PROFILE=${PROJECT_NAME} \
+AWS_PROFILE="${PROJECT_NAME}" \
 fargate task run \
-    ${PROJECT_NAME} \
+    "${PROJECT_NAME}" \
         --subnet-id "${AWS_SUBNET_ID}" \
         --security-group-id "${AWS_SECURITY_GROUP_ID}" \
         --env "ACCEPT_EULA=yes" \
@@ -158,20 +157,20 @@ fargate task run \
 
 ```bash
 aws \
-    --profile "default"
+    --profile 'default'
         ecr batch-delete-image \
             --repository-name "${PROJECT_NAME}" \
-            --image-ids imageTag="latest"
+            --image-ids imageTag='latest'
 ```
 
 - Delete an image by digest:
 
 ```bash
 aws \
-    --profile "default"
+    --profile 'default'
         ecr batch-delete-image \
             --repository-name "${PROJECT_NAME}" \
-            --image-ids imageDigest="sha256:ea38a89e..."
+            --image-ids imageDigest='sha256:ea38a89e...'
 ```
 
 ## Contributing
