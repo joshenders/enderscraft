@@ -3,6 +3,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: Enderscraft Public VPC Stack
 Metadata:
   License: CC BY-NC 4.0
+  Author: Josh Enders <josh.enders@gmail.com>
 
 Parameters:
   ParameterVPCCIDRBlock:
