@@ -39,6 +39,12 @@ Parameters:
     Type: String
     Default: "enderscraft"
 
+  ParameterLogRetentionDays:
+    Description: "Days of log retention for tasks and services"
+    Type: String
+    AllowedPattern: '^(1|3|5|7|14|30|60|90|120|150|180|365|400|545|731|1827|3653)$'
+    Default: "7"
+
 Resources:
   # DNS
   HostedZone:
@@ -258,3 +264,15 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-ECRRepository
+
+  LogGroupFargateTask:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/fargate/task/${AWS::StackName}"
+      RetentionInDays: !Ref ParameterLogRetentionDays
+
+  LogGroupFargateService:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/fargate/service/${AWS::StackName}"
+      RetentionInDays: !Ref ParameterLogRetentionDays
