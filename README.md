@@ -153,7 +153,7 @@ fargate task run \
 
 #### Common ECS Repository Maintenance Tasks
 
-- Delete an image by tag:
+Delete an image by tag:
 
 ```bash
 aws \
@@ -163,7 +163,7 @@ aws \
             --image-ids imageTag='latest'
 ```
 
-- Delete an image by digest:
+Delete an image by digest:
 
 ```bash
 aws \
