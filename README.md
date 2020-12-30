@@ -177,9 +177,9 @@ aws \
 
 ### Style
 
-- python black
-- shellcheck
-- cfn-lint
+- [black](https://github.com/psf/black)
+- [shellcheck](https://github.com/koalaman/shellcheck)
+- [cfn-lint](https://github.com/aws-cloudformation/cfn-python-lint)
 
 ### Directory structure
 
