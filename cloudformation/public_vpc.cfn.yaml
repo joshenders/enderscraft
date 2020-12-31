@@ -276,3 +276,13 @@ Resources:
     Properties:
       LogGroupName: !Sub "/fargate/service/${AWS::StackName}"
       RetentionInDays: !Ref ParameterLogRetentionDays
+
+Outputs:
+  ns1:
+    Value: !Select [0, !GetAtt HostedZone.NameServers]
+  ns2:
+    Value: !Select [1, !GetAtt HostedZone.NameServers]
+  ns3:
+    Value: !Select [2, !GetAtt HostedZone.NameServers]
+  ns4:
+    Value: !Select [3, !GetAtt HostedZone.NameServers]

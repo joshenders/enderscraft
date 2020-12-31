@@ -89,12 +89,14 @@ export CUSTOM_DOMAIN="example.com"
 From the root directory of the project, create the CloudFormation stack.
 
 ```bash
-aws cloudformation create-stack \
-    --region "${AWS_REGION}" \
-    --template-body "file://cloudformation/public_vpc.cfn.yaml" \
-    --stack-name "${PROJECT_NAME}" \
-    --parameters "ParameterKey=ParameterHostedZone,ParameterValue=${CUSTOM_DOMAIN}" \
-    --capabilities "CAPABILITY_NAMED_IAM"
+aws \
+    --profile "default" \
+    cloudformation create-stack \
+        --region "${AWS_REGION}" \
+        --template-body "file://cloudformation/public_vpc.cfn.yaml" \
+        --stack-name "${PROJECT_NAME}" \
+        --parameters "ParameterKey=ParameterHostedZone,ParameterValue=${CUSTOM_DOMAIN}" \
+        --capabilities "CAPABILITY_NAMED_IAM"
 ```
 
 (Optional) It is normal for cloudformation to take a long time. If you'd like some kind of indication of completion, you can run the following command which will block until the stack is available.
@@ -102,6 +104,22 @@ aws cloudformation create-stack \
 ```bash
 aws cloudformation wait stack-create-complete --stack-name "${PROJECT_NAME}"
 ```
+
+### DNS
+
+Once the stack has been created, you can run the following command to get the authoritative Route53 nameservers assigned to your domain.
+
+```bash
+aws \
+    --profile "default" \
+        cloudformation describe-stacks \
+            --stack-name ${PROJECT_NAME}  \
+| jq \
+    --raw-output \
+        '.Stacks[0] | .Outputs[0].OutputValue, .Outputs[1].OutputValue, .Outputs[2].OutputValue, .Outputs[3].OutputValue'
+```
+
+You can now login to your domain registrar's website and delegate your domain to Route53. Instructions on how to do this can be found on your registrar's website.
 
 ### IAM Configuration
 
@@ -130,6 +148,7 @@ aws --profile "enderscraft" configure
 The following environment variables are required for the rest of the setup process.
 
 ```bash
+export AWS_ACCOUNT_ID="$(aws sts get-caller-identity | jq --raw-output '.Account')"
 export AWS_SUBNET_ID="$(aws --profile 'default' ec2 describe-subnets --filters "Name=tag:Name,Values=${PROJECT_NAME}-SubnetPublic" | jq --raw-output '.Subnets[0].SubnetId')"
 export AWS_SECURITY_GROUP_ID="$(aws --profile 'default' ec2 describe-security-groups --filters "Name=tag:Name,Values=${PROJECT_NAME}-SecurityGroupFargateTasks" | jq --raw-output '.SecurityGroups[0].GroupId')"
 ```
