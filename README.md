@@ -111,7 +111,10 @@ Once the stack has been created, you can run the following command to get the au
 aws cloudformation describe-stacks \
     --profile "default" \
     --stack-name "${PROJECT_NAME}" \
-    --query 'Stacks[0].[Outputs[0].OutputValue, Outputs[1].OutputValue, Outputs[2].OutputValue, Outputs[3].OutputValue]'
+    --query 'Stacks[0].[Outputs[0].OutputValue,
+                        Outputs[1].OutputValue,
+                        Outputs[2].OutputValue,
+                        Outputs[3].OutputValue]'
 ```
 
 You can now login to your domain registrar's website and delegate your domain to Route53. Instructions on how to do this can be found on your registrar's website.
