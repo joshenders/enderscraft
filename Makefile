@@ -120,10 +120,10 @@ _prepare-image-root: ## A meaningful description
 push: ## Login to ECR, tag latest image, upload latest image to ECR
 	aws ecr get-login-password \
 		--region "${AWS_REGION}" \
-	|	docker login \
-			--username "AWS" \
-			--password-stdin \
-				"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+	| docker login \
+		--username "AWS" \
+		--password-stdin \
+			"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 	docker tag \
 		"${PROJECT_NAME}:latest" \
 		"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PROJECT_NAME}:latest"
