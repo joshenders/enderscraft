@@ -44,7 +44,6 @@ Enderscraft is designed to run in AWS on so-called "serverless" infrastructure. 
 ### Dependencies
 
 - [aws-cli](https://github.com/aws/aws-cli)
-- [jq](https://stedolan.github.io/jq/)
 
 #### Environment
 
@@ -89,14 +88,13 @@ export CUSTOM_DOMAIN="example.com"
 From the root directory of the project, create the CloudFormation stack.
 
 ```bash
-aws \
+aws cloudformation create-stack \
     --profile "default" \
-    cloudformation create-stack \
-        --region "${AWS_REGION}" \
-        --template-body "file://cloudformation/public_vpc.cfn.yaml" \
-        --stack-name "${PROJECT_NAME}" \
-        --parameters "ParameterKey=ParameterHostedZone,ParameterValue=${CUSTOM_DOMAIN}" \
-        --capabilities "CAPABILITY_NAMED_IAM"
+    --region "${AWS_REGION}" \
+    --template-body "file://cloudformation/public_vpc.cfn.yaml" \
+    --stack-name "${PROJECT_NAME}" \
+    --parameters "ParameterKey=ParameterHostedZone,ParameterValue=${CUSTOM_DOMAIN}" \
+    --capabilities "CAPABILITY_NAMED_IAM"
 ```
 
 (Optional) It is normal for cloudformation to take a long time. If you'd like some kind of indication of completion, you can run the following command which will block until the stack is available.
@@ -110,13 +108,11 @@ aws cloudformation wait stack-create-complete --stack-name "${PROJECT_NAME}"
 Once the stack has been created, you can run the following command to get the authoritative Route53 nameservers assigned to your domain.
 
 ```bash
-aws \
+aws cloudformation describe-stacks \
     --profile "default" \
-        cloudformation describe-stacks \
-            --stack-name ${PROJECT_NAME}  \
-| jq \
-    --raw-output \
-        '.Stacks[0] | .Outputs[0].OutputValue, .Outputs[1].OutputValue, .Outputs[2].OutputValue, .Outputs[3].OutputValue'
+    --output "table" \
+    --stack-name "${PROJECT_NAME}" \
+    --query 'Stacks[0].[Outputs[0].OutputValue, Outputs[1].OutputValue, Outputs[2].OutputValue, Outputs[3].OutputValue]'
 ```
 
 You can now login to your domain registrar's website and delegate your domain to Route53. Instructions on how to do this can be found on your registrar's website.
@@ -131,7 +127,7 @@ aws iam create-access-key --user-name "${PROJECT_NAME}"
 
 Configure your IAM user with the credentials displayed by the previous step.
 
-> **_Note:_** `Default region name` is personal choice but accept the default when prompted for `Default output format` .
+> **_Note:_** When prompted for `Default region name`, select a region that is network equidistant between all players.
 
 ```bash
 aws --profile "enderscraft" configure
@@ -148,9 +144,9 @@ aws --profile "enderscraft" configure
 The following environment variables are required for the rest of the setup process.
 
 ```bash
-export AWS_ACCOUNT_ID="$(aws sts get-caller-identity | jq --raw-output '.Account')"
-export AWS_SUBNET_ID="$(aws --profile 'default' ec2 describe-subnets --filters "Name=tag:Name,Values=${PROJECT_NAME}-SubnetPublic" | jq --raw-output '.Subnets[0].SubnetId')"
-export AWS_SECURITY_GROUP_ID="$(aws --profile 'default' ec2 describe-security-groups --filters "Name=tag:Name,Values=${PROJECT_NAME}-SecurityGroupFargateTasks" | jq --raw-output '.SecurityGroups[0].GroupId')"
+export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --output 'text' --query 'Account')"
+export AWS_SUBNET_ID="$(aws ec2 describe-subnets --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SubnetPublic" --query 'Subnets[0].SubnetId')"
+export AWS_SECURITY_GROUP_ID="$(aws ec2 describe-security-groups --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SecurityGroupFargateTasks" --query 'SecurityGroups[0].GroupId')"
 ```
 
 Containers can be launched with `fargatecli` with the following command.
@@ -174,21 +170,19 @@ fargate task run \
 Delete an image by tag:
 
 ```bash
-aws \
-    --profile "default"
-        ecr batch-delete-image \
-            --repository-name "${PROJECT_NAME}" \
-            --image-ids imageTag="latest"
+aws ecr batch-delete-image \
+    --profile "default" \
+    --repository-name "${PROJECT_NAME}" \
+    --image-ids imageTag="latest"
 ```
 
 Delete an image by digest:
 
 ```bash
-aws \
-    --profile "default"
-        ecr batch-delete-image \
-            --repository-name "${PROJECT_NAME}" \
-            --image-ids imageDigest="sha256:ea38a89e..."
+aws ecr batch-delete-image \
+    --profile "default" \
+    --repository-name "${PROJECT_NAME}" \
+    --image-ids imageDigest="sha256:ea38a89e..."
 ```
 
 ## Contributing
