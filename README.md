@@ -23,7 +23,7 @@
 
 Enderscraft is free as in beer but you can expect a bill from AWS roughly inline with the table below.
 
-> **Note:** You may incur slight additional charges for things like: data transfer, log storage, container storage, and backups.
+> **Note:** You may incur slight additional charges for things like: data transfer, log storage, container storage, lambdas, DNS queries, and backup storage.
 
 | per vCPU per hour | per GB of RAM per hour |
 | ----------------- | ---------------------- |
