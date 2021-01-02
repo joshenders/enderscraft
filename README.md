@@ -78,7 +78,7 @@ After successfully completing this process, you should have a `[default]` sectio
 
 The following environment variables are required for the rest of the setup process.
 
-> **_Note:_** A custom domain isn't a strict requirement but it will make connecting to your game a lot easier, as the public IP address will change on each invocation of a container.
+> **_Note:_** A custom domain isn't stictly necessary but it will make connecting to your game a lot easier, as the public IP address will change on each invocation of a container.
 
 ```bash
 export AWS_REGION="$(aws configure get 'region')"
@@ -110,7 +110,6 @@ Once the stack has been created, you can run the following command to get the au
 ```bash
 aws cloudformation describe-stacks \
     --profile "default" \
-    --output "table" \
     --stack-name "${PROJECT_NAME}" \
     --query 'Stacks[0].[Outputs[0].OutputValue, Outputs[1].OutputValue, Outputs[2].OutputValue, Outputs[3].OutputValue]'
 ```
@@ -144,7 +143,7 @@ aws --profile "enderscraft" configure
 The following environment variables are required for the rest of the setup process.
 
 ```bash
-export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --output 'text' --query 'Account')"
+export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --profile 'default' --output 'text' --query 'Account')"
 export AWS_SUBNET_ID="$(aws ec2 describe-subnets --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SubnetPublic" --query 'Subnets[0].SubnetId')"
 export AWS_SECURITY_GROUP_ID="$(aws ec2 describe-security-groups --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SecurityGroupFargateTasks" --query 'SecurityGroups[0].GroupId')"
 ```
