@@ -4,7 +4,7 @@
 
 ## About
 
-"Enderscraft" is Minecraft™ repackaged for on-demand serverless computing. Instead of running a server 24/7, run your server on-demand for pennies an hour. Only pay for the hours that you're playing.
+"Enderscraft" is Minecraft™ repackaged for on-demand serverless computing. Instead of running a server 24/7, run your server on-demand for pennies an hour in AWS. Only pay for the hours that you're playing.
 
 ### Features (in-progress or planned)
 
