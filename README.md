@@ -45,7 +45,7 @@ Enderscraft is designed to run in AWS on so-called "serverless" infrastructure. 
 
 #### Environment
 
-The following environment variable is required for this section of the setup instructions:
+The following environment variables are required for the rest of the setup process.
 
 ```bash
 export PROJECT_NAME="enderscraft"
