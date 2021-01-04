@@ -17,7 +17,7 @@ DATA_DIR           := /data
 # SHORT_COMMIT := $(shell git rev-parse --short HEAD)
 # LONG_COMMIT  := $(shell git rev-parse HEAD)
 
-ifneq ($(filter $(MAKECMDGOALS),push task), )
+ifneq ($(filter $(MAKECMDGOALS),push task),)
     # AWS
     AWS_REGION     := $(shell aws configure get region --profile $(PROJECT_NAME))
     AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --profile 'default' --output 'text' --query 'Account')
