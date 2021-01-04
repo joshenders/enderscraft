@@ -134,12 +134,13 @@ push: ## Login to ECR, tag latest image, upload latest image to ECR
 
 
 .PHONY: task
-task: ## A meaningful description
+task: ## Create a new task
 	fargate task run \
+		--no-emoji \
 		--subnet-id "${AWS_SUBNET_ID}" \
 		--security-group-id "${AWS_SG_ID}" \
 		--env "ACCEPT_EULA=yes" \
-		--cpu "2048" \
-		--memory "4096" \
+		--cpu "1024" \
+		--memory "2048" \
 		--image "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/enderscraft:latest" \
 			"$(PROJECT_NAME)"
