@@ -1,7 +1,0 @@
-{
-  "python.pythonPath": "/Users/jenders/.local/share/virtualenvs/py-HLtwe4gP/bin/python",
-  "editor.formatOnSave": true,
-  "[dockerfile]": {
-    "editor.formatOnSave": false
-  }
-}
