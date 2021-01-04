@@ -14,15 +14,17 @@ SERVICE_IMAGE_ROOT := $(SERVICE_IMAGE)/files
 DATA_DIR           := /data
 
 # Deployment
-SHORT_COMMIT := $(shell git rev-parse --short HEAD)
-LONG_COMMIT  := $(shell git rev-parse HEAD)
+# SHORT_COMMIT := $(shell git rev-parse --short HEAD)
+# LONG_COMMIT  := $(shell git rev-parse HEAD)
 
-# AWS
-AWS_REGION     := $(shell aws configure get region --profile $(PROJECT_NAME))
-AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --profile 'default' --output 'text' --query 'Account')
-AWS_VPC_ID     := $(shell aws ec2 describe-vpcs --profile 'default' --output 'text' --filters "Name=tag:aws:cloudformation:stack-name,Values=${PROJECT_NAME}" --query 'Vpcs[0].VpcId')
-AWS_SUBNET_ID  := $(shell aws ec2 describe-subnets --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SubnetPublic" --query 'Subnets[0].SubnetId')
-AWS_SG_ID      := $(shell aws ec2 describe-security-groups --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SecurityGroupFargateTasks" --query 'SecurityGroups[0].GroupId')
+ifneq ($(filter $(MAKECMDGOALS),push task), )
+    # AWS
+    AWS_REGION     := $(shell aws configure get region --profile $(PROJECT_NAME))
+    AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --profile 'default' --output 'text' --query 'Account')
+    AWS_VPC_ID     := $(shell aws ec2 describe-vpcs --profile 'default' --output 'text' --filters "Name=tag:aws:cloudformation:stack-name,Values=${PROJECT_NAME}" --query 'Vpcs[0].VpcId')
+    AWS_SUBNET_ID  := $(shell aws ec2 describe-subnets --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SubnetPublic" --query 'Subnets[0].SubnetId')
+    AWS_SG_ID      := $(shell aws ec2 describe-security-groups --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SecurityGroupFargateTasks" --query 'SecurityGroups[0].GroupId')
+endif
 
 # Container
 MINECRAFT_USER  := minecraft

@@ -6,7 +6,7 @@ Metadata:
   Author: Josh Enders <josh.enders@gmail.com>
 
 Parameters:
-  ParameterVPCCIDRBlock:
+  ParameterVPCCIDR:
     Description: "VPC CIDR Block"
     Type: String
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
@@ -17,6 +17,12 @@ Parameters:
     Type: String
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: "10.0.0.0/26"
+
+  ParameterAdminCIDR:
+    Description: "CIDR Block which will be able to connect to RCON"
+    Type: String
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: "0.0.0.0/0"
 
   ParameterMinecraftPort:
     Description: "Minecraft port"
@@ -42,13 +48,61 @@ Parameters:
     Default: "enderscraft"
 
   ParameterLogRetentionDays:
-    Description: "Days of log retention for tasks and services"
+    Description: "Days of log retention for tasks"
     Type: String
     AllowedPattern: '^(1|3|5|7|14|30|60|90|120|150|180|365|400|545|731|1827|3653)$'
     Default: "7"
 
+  ParameterBudgetAmountUSD:
+    Description: "Allowance of USD to spend per unit of time"
+    Type: String
+    AllowedPattern: '^\d+(\.\d+)?$'
+    Default: "10"
+
+  ParameterBudgetFrequency:
+    Description: "Period of time to calculate budget (ex: DAILY|MONTHLY|QUARTERLY|ANNUALLY)"
+    Type: String
+    AllowedPattern: '^(ANNUALLY|DAILY|MONTHLY|QUARTERLY)$'
+    Default: "MONTHLY"
+
+  ParameterEmailAddress:
+    Description: "Email address for budget notifications"
+    Type: String
+    AllowedPattern: '[a-zA-Z0-9-.+%]+@[a-zA-Z0-9-.]+'
+
 
 Resources:
+  # Budget
+  Budget:
+    Type: "AWS::Budgets::Budget"
+    Properties:
+      Budget:
+        BudgetLimit:
+          Amount: !Ref ParameterBudgetAmountUSD
+          Unit: USD
+        TimeUnit: !Ref ParameterBudgetFrequency
+        BudgetType: COST
+        CostFilters:
+          TagKeyValue:
+            - !Sub "aws:cloudformation:stack-name$${AWS::StackName}"
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 95
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref ParameterEmailAddress
+
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 50
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref ParameterEmailAddress
+
+
   # DNS
   HostedZone:
     Type: AWS::Route53::HostedZone
@@ -61,7 +115,7 @@ Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref ParameterVPCCIDRBlock
+      CidrBlock: !Ref ParameterVPCCIDR
       EnableDnsHostnames: true
       EnableDnsSupport: true
       InstanceTenancy: default
@@ -86,14 +140,14 @@ Resources:
       InternetGatewayId: !Ref InternetGateway
 
 
-  # Network ACLs
-  NetworkAclDefault:
+  # Network ACL
+  NetworkAclSubnetPublic:
     Type: AWS::EC2::NetworkAcl
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${AWS::StackName}-NetworkAclDefault
+          Value: !Sub ${AWS::StackName}-NetworkAclSubnetPublic
 
 
   # Public Subnet
@@ -107,6 +161,14 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-SubnetPublic
+
+  NetworkAclAssociationSubnetPublic:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId:
+        Ref: SubnetPublic
+      NetworkAclId:
+        Ref: NetworkAclSubnetPublic
 
   RouteTableSubnetPublic:
     Type: AWS::EC2::RouteTable
@@ -144,7 +206,7 @@ Resources:
           IpProtocol: tcp
           ToPort: !Ref ParameterMinecraftPort
 
-        - CidrIp: 0.0.0.0/0
+        - CidrIp: !Ref ParameterAdminCIDR
           Description: !Sub "Allow inbound connections on port ${ParameterRCONPort}"
           FromPort: !Ref ParameterRCONPort
           IpProtocol: tcp
@@ -220,6 +282,11 @@ Resources:
             Action:
               - "ecs:RunTask"
             Resource: !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*:*"
+
+          - Effect: Allow
+            Action:
+              - elasticloadbalancing:DeleteLoadBalancer
+            Resource: !Sub "arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:loadbalancer/net/*"
 
           - Effect: Allow
             Action:

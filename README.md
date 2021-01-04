@@ -4,7 +4,7 @@
 
 ## About
 
-"Enderscraft" is Minecraft™ repackaged for on-demand serverless computing. Instead of running a server 24/7, run your server on-demand for pennies an hour in AWS. Only pay for the hours that you're playing.
+"Enderscraft" is Minecraft™ repackaged for on-demand serverless computing. Instead of running a server 24/7, run your server on-demand for pennies an hour in AWS. Only pay for the hours that you're actually playing.
 
 ### Features (in-progress or planned)
 
@@ -21,9 +21,7 @@
 
 ### Pricing
 
-Enderscraft is free as in beer but you can expect a bill from AWS roughly inline with the table below.
-
-> **Note:** You may incur slight additional charges for things like: data transfer, log storage, container storage, lambdas, DNS queries, and backup storage.
+Enderscraft is free as in beer but you can loosely approximate your AWS bill with the table below. You will also incur additional charges for things like: data transfer, log storage, container storage, lambdas, DNS queries, and volume backups. During the initial setup, a budget and alerts are created which will notify you at 50% and 95% of your user-defined monthly allowance.
 
 | per vCPU per hour | per GB of RAM per hour |
 | ----------------- | ---------------------- |
@@ -51,6 +49,7 @@ The following environment variable is required for this section of the setup ins
 
 ```bash
 export PROJECT_NAME="enderscraft"
+export AWS_PAGER="cat"
 ```
 
 #### Initial AWS CLI Configuration
@@ -76,13 +75,14 @@ After successfully completing this process, you should have a `[default]` sectio
 
 #### Environment
 
-The following environment variables are required for the rest of the setup process.
-
-> **_Note:_** A custom domain isn't stictly necessary but it will make connecting to your game a lot easier, as the public IP address will change on each invocation of a container.
+The following environment variables are required for the rest of the setup process. Configure according to your preferences.
 
 ```bash
 export AWS_REGION="$(aws configure get 'region')"
-export CUSTOM_DOMAIN="example.com"
+export CFN_DOMAIN="example.net"
+export CFN_EMAIL_ADDRESS="you@example.com"
+export CFN_ADMIN_CIDR="0.0.0.0/0"  # default: any
+export CFN_MONTHLY_BUDGET_USD="10" # default: $10 USD
 ```
 
 From the root directory of the project, create the CloudFormation stack.
@@ -93,11 +93,15 @@ aws cloudformation create-stack \
     --region "${AWS_REGION}" \
     --template-body "file://cloudformation/public_vpc.cfn.yaml" \
     --stack-name "${PROJECT_NAME}" \
-    --parameters "ParameterKey=ParameterHostedZone,ParameterValue=${CUSTOM_DOMAIN}" \
+    --parameters \
+        "ParameterKey=ParameterHostedZone,ParameterValue=${CFN_DOMAIN}" \
+        "ParameterKey=ParameterEmailAddress,ParameterValue=${CFN_EMAIL_ADDRESS}" \
+        "ParameterKey=ParameterAdminCIDR,ParameterValue=${CFN_ADMIN_CIDR}" \
+        "ParameterKey=ParameterBudgetAmountUSD,ParameterValue=${CFN_MONTHLY_BUDGET_USD}" \
     --capabilities "CAPABILITY_NAMED_IAM"
 ```
 
-(Optional) It is normal for cloudformation to take a long time. If you'd like some kind of indication of completion, you can run the following command which will block until the stack is available.
+(Optional) It is normal for cloudformation to take awhile. If you'd like some kind of indication of completion, you can run the following command which will block until the stack is available.
 
 ```bash
 aws cloudformation wait stack-create-complete --stack-name "${PROJECT_NAME}"
@@ -118,6 +122,14 @@ aws cloudformation describe-stacks \
 ```
 
 You can now login to your domain registrar's website and delegate your domain to Route53. Instructions on how to do this can be found on your registrar's website.
+
+### Cost Allocation Tags
+
+In order to get budget alerts working correctly, you need to enable `Cost allocation tags` for our newly created stack. Unfortunately there is no API for this. Head over to the `AWS Billing & Cost Management Dashboard` and put a check in the column for `aws:cloudformation:stack-name` and then click `Activate`. It may take 24h for tags to be associated with resources in the dashboard.
+
+> **_Warning:_** It is **very important** that you **do not forget this step** or else budget alerts will not work as expected.
+
+![Cost Allocation Tags](doc/cost_allocation_tags.png)
 
 ### IAM Configuration
 
@@ -201,6 +213,7 @@ aws ecr batch-delete-image \
 ```bash
 .
 ├── cloudformation         # AWS CloudFormation files
+├── doc                    # Supporting files for Documentation
 ├── docker                 # Docker files
 │   ├── alpine             # WIP Alpine-based containers
 │   └── debian             # Debian-based containers
@@ -208,7 +221,8 @@ aws ecr batch-delete-image \
 │       │   └── files      # Base layer root filesystem overlay
 │       └── enderscraft    # Minecraft layer build context
 │           └── files      # Minecraft layer root filesystem overlay
-└── src                    # Build scripts and whatnot
+├── src                    # Build scripts and whatnot
+└── tests                  # Hopes and dreams
 ```
 
 ## License
