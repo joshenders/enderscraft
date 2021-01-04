@@ -125,7 +125,7 @@ You can now login to your domain registrar's website and delegate your domain to
 
 ### Cost Allocation Tags
 
-In order to get budget alerts working correctly, you need to enable CloudFormation's `Cost allocation tags`. Unfortunately there is no API for this. Head over to the [AWS Billing & Cost Management Dashboard](https://console.aws.amazon.com/billing/home?#/tags) and put a check in the column for the `aws:cloudformation:stack-name` row and then click `Activate`. It may take 24h for tags to be associated with resources in the dashboard.
+In order to get budget alerts working correctly, you need to enable CloudFormation's **_Cost allocation tags_**. Unfortunately there is no API for this. Head over to the [AWS Billing & Cost Management Dashboard](https://console.aws.amazon.com/billing/home?#/tags) and put a check in the column for the `aws:cloudformation:stack-name` row and then click **_Activate_**. It may take 24h for tags to be associated with resources in the dashboard.
 
 > **_Warning:_** It is **very important** that you **do not forget this step** or else budget alerts will not work as expected.
 
