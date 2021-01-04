@@ -30,7 +30,7 @@ function main() {
             fi
     done
 
-    echo -e "\nAll dependencies are installed correctly"
+    echo -e "\nAll dependencies appear to be installed"
 }
 
 main "$@"
