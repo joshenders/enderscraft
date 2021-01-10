@@ -21,7 +21,7 @@
 
 ### Pricing
 
-Enderscraft is free as in beer but you can loosely approximate your AWS bill with the table below. You will also incur additional charges for things like: data transfer, log storage, container storage, lambdas, DNS queries, and volume backups. During the initial setup, a budget and alerts are created which will notify you at 50% and 95% of your user-defined monthly allowance.
+Enderscraft is free as in beer but you can loosely approximate your AWS bill with the table below. You will also incur additional charges for things like: data transfer, log storage, container storage, lambdas, DNS queries, and volume backups. During the initial setup, a budget and alerts are created which will notify you at 50%, 75%, and 95% of your user-defined monthly allowance.
 
 | per vCPU per hour | per GB of RAM per hour |
 | ----------------- | ---------------------- |
@@ -91,14 +91,14 @@ From the root directory of the project, create the CloudFormation stack.
 aws cloudformation create-stack \
     --profile "default" \
     --region "${AWS_REGION}" \
-    --template-body "file://cloudformation/public_vpc.cfn.yaml" \
     --stack-name "${PROJECT_NAME}" \
+    --template-body "file://cloudformation/public_vpc.cfn.yaml" \
+    --capabilities "CAPABILITY_NAMED_IAM" \
     --parameters \
         "ParameterKey=ParameterHostedZone,ParameterValue=${CFN_DOMAIN}" \
         "ParameterKey=ParameterEmailAddress,ParameterValue=${CFN_EMAIL_ADDRESS}" \
         "ParameterKey=ParameterAdminCIDR,ParameterValue=${CFN_ADMIN_CIDR}" \
-        "ParameterKey=ParameterBudgetAmountUSD,ParameterValue=${CFN_MONTHLY_BUDGET_USD}" \
-    --capabilities "CAPABILITY_NAMED_IAM"
+        "ParameterKey=ParameterBudgetAmountUSD,ParameterValue=${CFN_MONTHLY_BUDGET_USD}"
 ```
 
 (Optional) It is normal for cloudformation to take awhile. If you'd like some kind of indication of completion, you can run the following command which will block until the stack is available.

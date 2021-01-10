@@ -1,5 +1,5 @@
 ---
-AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: 2010-09-09
 Description: Enderscraft Public VPC Stack
 Metadata:
   License: CC BY-NC 4.0
@@ -7,66 +7,66 @@ Metadata:
 
 Parameters:
   ParameterVPCCIDR:
-    Description: "VPC CIDR Block"
+    Description: VPC CIDR Block
     Type: String
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: "10.0.0.0/24"
 
   ParameterSubnetPublicCIDR:
-    Description: "Public Subnet CIDR Block"
+    Description: Public Subnet CIDR Block
     Type: String
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: "10.0.0.0/26"
 
   ParameterAdminCIDR:
-    Description: "CIDR Block which will be able to connect to RCON"
+    Description: CIDR Block which will be able to connect to RCON
     Type: String
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: "0.0.0.0/0"
 
   ParameterMinecraftPort:
-    Description: "Minecraft port"
+    Description: Minecraft port
     Type: String
     AllowedPattern: '\d{1,5}'
     Default: "25565"
 
   ParameterRCONPort:
-    Description: "RCON port"
+    Description: RCON port
     Type: String
     AllowedPattern: '\d{1,5}'
     Default: "25575"
 
   ParameterHostedZone:
-    Description: "Domain Name"
+    Description: Non-Fully Qualified Domain Name (no trailing dot)
     Type: String
-    AllowedPattern: "[a-zA-Z0-9-.]+"
+    AllowedPattern: '[a-zA-Z0-9-.]+'
 
   ParameterIAMUser:
-    Description: "IAM User"
+    Description: IAM User
     Type: String
-    AllowedPattern: "[a-z]+"
+    AllowedPattern: '[a-z]+'
     Default: "enderscraft"
 
   ParameterLogRetentionDays:
-    Description: "Days of log retention for tasks"
+    Description: Days of log retention for tasks (1|3|5|7|14|30|60|90|120|150|180|365|400|545|731|1827|3653)
     Type: String
     AllowedPattern: '^(1|3|5|7|14|30|60|90|120|150|180|365|400|545|731|1827|3653)$'
     Default: "7"
 
   ParameterBudgetAmountUSD:
-    Description: "Allowance of USD to spend per unit of time"
+    Description: Allowance of USD to spend per unit of time
     Type: String
     AllowedPattern: '^\d+(\.\d+)?$'
     Default: "10"
 
   ParameterBudgetFrequency:
-    Description: "Period of time to calculate budget (ex: DAILY|MONTHLY|QUARTERLY|ANNUALLY)"
+    Description: "Period of time to calculate budget (DAILY|MONTHLY|QUARTERLY|ANNUALLY)"
     Type: String
     AllowedPattern: '^(ANNUALLY|DAILY|MONTHLY|QUARTERLY)$'
     Default: "MONTHLY"
 
   ParameterEmailAddress:
-    Description: "Email address for budget notifications"
+    Description: Email address for budget notifications
     Type: String
     AllowedPattern: '[a-zA-Z0-9-.+%]+@[a-zA-Z0-9-.]+'
 
@@ -74,9 +74,10 @@ Parameters:
 Resources:
   # Budget
   Budget:
-    Type: "AWS::Budgets::Budget"
+    Type: AWS::Budgets::Budget
     Properties:
       Budget:
+        BudgetName: !Sub ${AWS::StackName}-Budget
         BudgetLimit:
           Amount: !Ref ParameterBudgetAmountUSD
           Unit: USD
@@ -84,12 +85,12 @@ Resources:
         BudgetType: COST
         CostFilters:
           TagKeyValue:
-            - !Sub "aws:cloudformation:stack-name$${AWS::StackName}"
+            - !Sub aws:cloudformation:stack-name$${AWS::StackName}
       NotificationsWithSubscribers:
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
-            Threshold: 95
+            Threshold: 50
           Subscribers:
             - SubscriptionType: EMAIL
               Address: !Ref ParameterEmailAddress
@@ -97,7 +98,15 @@ Resources:
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
-            Threshold: 50
+            Threshold: 75
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref ParameterEmailAddress
+
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 95
           Subscribers:
             - SubscriptionType: EMAIL
               Address: !Ref ParameterEmailAddress
@@ -109,6 +118,20 @@ Resources:
     Properties:
       Name:
         Ref: ParameterHostedZone
+      HostedZoneTags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-HostedZone
+
+  RecordSetApexRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Comment: Enderscraft DDNS record
+      Name: !Sub ${ParameterHostedZone}.
+      ResourceRecords: 
+        - 127.0.0.1
+      TTL: 60
+      Type: A
 
 
   # VPC
@@ -148,6 +171,29 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-NetworkAclSubnetPublic
+
+  # Network ACL - Inbound
+  NetworkAclEntryInbound100:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId:
+        Ref: NetworkAclSubnetPublic
+      RuleNumber: 100
+      Protocol: -1
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
+
+  # Network ACL - Outbound
+  NetworkAclEntryOutbound100:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId:
+        Ref: NetworkAclSubnetPublic
+      RuleNumber: 100
+      Protocol: -1
+      Egress: true
+      RuleAction: allow
+      CidrBlock: 0.0.0.0/0
 
 
   # Public Subnet
@@ -201,13 +247,13 @@ Resources:
       GroupDescription: Security Group for Fargate Tasks
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          Description: !Sub "Allow inbound connections on port ${ParameterMinecraftPort}"
+          Description: !Sub Allow inbound connections on port ${ParameterMinecraftPort}
           FromPort: !Ref ParameterMinecraftPort
           IpProtocol: tcp
           ToPort: !Ref ParameterMinecraftPort
 
         - CidrIp: !Ref ParameterAdminCIDR
-          Description: !Sub "Allow inbound connections on port ${ParameterRCONPort}"
+          Description: !Sub Allow inbound connections on port ${ParameterRCONPort}
           FromPort: !Ref ParameterRCONPort
           IpProtocol: tcp
           ToPort: !Ref ParameterRCONPort
@@ -221,13 +267,16 @@ Resources:
     Type: AWS::IAM::User
     Properties:
       UserName: !Ref ParameterIAMUser
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-IAMUser
 
   IAMRoleECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: "Role for executing ECS Tasks"
+      Description: Role for executing ECS Tasks
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
         - Effect: Allow
           Action: sts:AssumeRole
@@ -240,95 +289,83 @@ Resources:
         - Key: Name
           Value: !Sub ${AWS::StackName}-IAMRoleECSTaskExecutionRole
 
-  IAMRoleDDNSLambdaExecutionRole:
+  IAMRoleLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      Description: "Role for executing DDNS Lambdas"
+      Description: Role for executing DDNS Lambdas
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
         - Effect: Allow
           Action: sts:AssumeRole
           Principal:
             Service: lambda.amazonaws.com
-      RoleName: DDNSLambdaExecutionRole
+      RoleName: LambdaExecutionRole
       Tags:
         - Key: Name
-          Value: !Sub ${AWS::StackName}-DDNSLambdaExecutionRole
+          Value: !Sub ${AWS::StackName}-LambdaExecutionRole
 
   IAMPolicyFargateCLI:
-    Type: 'AWS::IAM::Policy'
+    Type: AWS::IAM::Policy
     DependsOn: IAMUser
     Properties:
       PolicyName: FargateCLIPolicy
       Users: 
         - !Ref ParameterIAMUser
       PolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Action:
-              - "acm:ListCertificates"
-              - "ec2:DescribeNetworkInterfaces"
-              - "ecs:CreateCluster"
-              - "ecs:DescribeTaskDefinition"
-              - "ecs:ListServices"
-              - "ecs:ListTasks"
-              - "ecs:RegisterTaskDefinition"
-              - "elasticloadbalancing:DescribeLoadBalancers"
-            Resource: '*'
+              - ecs:DescribeTasks
+              - ecs:StopTask
+            Resource: !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/fargate/*
 
           - Effect: Allow
             Action:
-              - "ecs:RunTask"
-            Resource: !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*:*"
+              - ecs:RunTask
+            Resource: !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/*
 
           - Effect: Allow
             Action:
-              - elasticloadbalancing:DeleteLoadBalancer
-            Resource: !Sub "arn:aws:elasticloadbalancing:${AWS::Region}:${AWS::AccountId}:loadbalancer/net/*"
+              - logs:CreateLogGroup
+              - logs:FilterLogEvents
+            Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/fargate/*
 
           - Effect: Allow
             Action:
-              - "ecs:DescribeTasks"
-              - "ecs:StopTask"
-              - "iam:GetRole"
-              - "iam:PassRole"
-              - "logs:CreateLogGroup"
-              - "logs:FilterLogEvents"
-            Resource:
-              - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/fargate/*"
-              - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
-              - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/fargate/*/*:*:"
-
-          - Effect: Allow
-            Action:
-              - "ecs:CreateService"
-              - "ecs:DeleteService"
-              - "ecs:DescribeServices"
-              - "ecs:UpdateService"
-              - "sts:AssumeRole"
-            Resource:
-              - !Sub "arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/fargate/*"
-              - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
-
-
-  IAMPolicyDDNSLambdaExecution:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: DDNSLambdaExecutionPolicy
-      Roles:
-        - !Ref IAMRoleDDNSLambdaExecutionRole
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Action:
-              - dynamodb:*
+              - ec2:DescribeNetworkInterfaces
+              - ecs:CreateCluster
+              - ecs:DescribeTaskDefinition
+              - ecs:ListTasks
+              - ecs:RegisterTaskDefinition
             Resource: "*"
 
           - Effect: Allow
-            Action: ec2:Describe*
+            Action:
+              - iam:GetRole
+              - iam:PassRole
+              - sts:AssumeRole
+            Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole
+
+  IAMPolicyDDNSLambdaExecution:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: DDNSLambdaExecutionPolicy
+      Roles:
+        - !Ref IAMRoleLambdaExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: ecs:DescribeTasks
+            Resource: !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task/fargate/*
+
+          - Effect: Allow
+            Action:
+              - ec2:DescribeNetworkInterfaces
+              - route53:ListHostedZones
+              - route53:ChangeResourceRecordSets
             Resource: "*"
 
           - Effect: Allow
@@ -336,19 +373,7 @@ Resources:
               - logs:CreateLogGroup
               - logs:CreateLogStream
               - logs:PutLogEvents
-            Resource: "*"
-
-          - Effect: Allow
-            Action:
-              - route53:*
-            Resource:
-              - "*"
-
-          - Effect: Allow
-            Action:
-              - SNS:Publish
-            Resource:
-              - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:DDNSAlerts"
+            Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
 
 
   # ECR
@@ -359,9 +384,9 @@ Resources:
       RepositoryName: !Sub ${AWS::StackName}
       ImageScanningConfiguration:
         scanOnPush: true
-      ImageTagMutability: "MUTABLE"
+      ImageTagMutability: MUTABLE
       LifecyclePolicy:
-        LifecyclePolicyText: |-
+        LifecyclePolicyText: |
           {
             "rules": [
               {
@@ -379,36 +404,131 @@ Resources:
             ]
           }
       RepositoryPolicyText:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
               AWS:
-                - !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+                - !Sub arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole
             Action:
-              - "ecr:BatchCheckLayerAvailability"
-              - "ecr:BatchGetImage"
-              - "ecr:DescribeImages"
-              - "ecr:DescribeRepositories"
-              - "ecr:GetDownloadUrlForLayer"
-              - "ecr:ListImages"
+              - ecr:BatchCheckLayerAvailability
+              - ecr:BatchGetImage
+              - ecr:DescribeImages
+              - ecr:DescribeRepositories
+              - ecr:GetDownloadUrlForLayer
+              - ecr:ListImages
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-ECRRepository
 
 
+  # Events
+  EventsRuleDDNS:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Trigger ddns lambda for enderscraft tasks
+      EventBusName: default
+      EventPattern:
+        source: 
+          - aws.ecs
+        detail-type:
+          - ECS Task State Change
+        detail:
+          clusterArn:
+            - !Sub arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:cluster/fargate
+          lastStatus:
+            - RUNNING
+      Name: !Sub ${AWS::StackName}_ddns_rule
+      State: ENABLED
+      Targets: 
+        - Arn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}_ddns_lambda
+          Id: LambdaTarget
+          InputPath: $.detail
+
+
+  # Lambda
+  LambdaFunctionDDNS:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Dynamically update DNS record for running tasks
+      Runtime: python3.8
+      Role: !GetAtt IAMRoleLambdaExecutionRole.Arn
+      FunctionName: !Sub ${AWS::StackName}_ddns_lambda
+      Handler: index.lambda_handler
+      Code:
+        ZipFile: !Sub |
+          C=dict
+          import boto3 as D,logging as E
+          from sys import exit,stderr
+          B='${ParameterHostedZone}.'
+          I='${AWS::StackName}'
+          J=60
+          E.basicConfig(format='%(name)s [%(levelname)s] %(message)s')
+          A=E.getLogger(__name__)
+          A.setLevel(E.DEBUG)
+          def K(arn):
+            def A(arn):A=D.client('ecs');B=A.describe_tasks(cluster='fargate',tasks=[arn]);return B.get('tasks',[C()])[0].get('attachments',[C()])[0].get('details',[C()])[1].get('value')
+            def B(eni):A=D.client('ec2');B=A.describe_network_interfaces(NetworkInterfaceIds=[eni]);return B.get('NetworkInterfaces',[C()])[0].get('Association',C()).get('PublicIp')
+            E=A(arn);return B(E)
+          def F(answer):
+            I='Name';E={'Changes':[{'Action':'UPSERT','ResourceRecordSet':{I:B,'Type':'A','TTL':J,'ResourceRecords':[{'Value':answer}]}}]};F=D.client('route53');G=F.list_hosted_zones().get('HostedZones',list());C=None
+            for H in G:
+              if H.get(I)==B:C=H.get('Id').split('/')[2];A.debug(f"Found zone_id: '{C}' for '{B}'")
+            if not C:A.error(f"'{B}' not found in hosted_zones: '{G}'");exit(1)
+            A.info(f"Calling route53 with batch: '{E}'");return F.change_resource_record_sets(HostedZoneId=C,ChangeBatch=E)
+          def lambda_handler(event,_):
+            H='RUNNING';B=event;J=B.get('taskDefinitionArn');C=B.get('lastStatus');D=B.get('desiredStatus')
+            if I not in J:A.warning(f"Ignored event");return
+            elif C==H and D=='STOPPED':A.info(f"Task stop event");F('127.0.0.1');return
+            elif C==H and D==H:A.info(f"Task start event");E=B.get('taskArn');G=K(E);A.debug(f"task_arn: '{E}', ipv4_add4: '{G}'");L=F(G);A.info(f"Route53 response: '{L}'")
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-LambdaFunctionDDNS
+
+  LambdaPermissionDDNS:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt LambdaFunctionDDNS.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+
+
+  # # S3
+  # S3Bucket:
+  #   Type: AWS::S3::Bucket
+  #   Properties:
+  #     BucketName: !Sub ${AWS::StackName}-lambda-functions
+  #     AccessControl: BucketOwnerFullControl
+  #     PublicAccessBlockConfiguration:
+  #       BlockPublicAcls: true
+  #       BlockPublicPolicy: true
+  #       IgnorePublicAcls: true
+  #       RestrictPublicBuckets: true
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub ${AWS::StackName}-S3Bucket
+  #     VersioningConfiguration:
+  #       Status: Suspended
+
   # LogGroup
   LogGroupFargateTask:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/fargate/task/${AWS::StackName}"
+      LogGroupName: !Sub /fargate/task/${AWS::StackName}
       RetentionInDays: !Ref ParameterLogRetentionDays
 
   LogGroupFargateService:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/fargate/service/${AWS::StackName}"
+      LogGroupName: !Sub /fargate/service/${AWS::StackName}
       RetentionInDays: !Ref ParameterLogRetentionDays
+
+  LogGroupLambda:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}_ddns_lambda
+      RetentionInDays: !Ref ParameterLogRetentionDays
+
 
 # Ouputs
 Outputs:

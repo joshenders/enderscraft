@@ -133,6 +133,13 @@ push: ## Login to ECR, tag latest image, upload latest image to ECR
 		"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PROJECT_NAME}:latest"
 
 
+.PHONY: stop
+stop: ## Stop a running task
+	fargate task stop \
+		--no-emoji \
+			enderscraft
+
+
 .PHONY: task
 task: ## Create a new task
 	fargate task run \

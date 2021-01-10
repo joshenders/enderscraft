@@ -104,11 +104,11 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-d",
-        "--debug",
-        dest="debug_flag",
+        "-v",
+        "--verbose",
+        dest="verbose_flag",
         action="store_true",
-        help="enable debug mode",
+        help="enable verbose mode",
     )
 
     parser.add_argument("dest_path", metavar="<dest>", type=str)
@@ -123,9 +123,9 @@ def exit_with_critical(msg: str) -> None:
 def main() -> None:
     args = parse_args()
 
-    if args.debug_flag:
+    if args.verbose_flag:
         log.setLevel(logging.DEBUG)
-        log.debug("--debug passed. Tracebacks and Debug logging enabled")
+        log.debug("--verbose passed. Tracebacks and Debug logging enabled")
 
     requested = None
 
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         stream=sys.stderr,
         datefmt="%H:%M:%S",
-        format="%(asctime)s [%(levelname)s]: " "%(message)s",
+        format="%(asctime)s [%(levelname)s] %(message)s",
     )
 
     log = logging.getLogger(__name__)
