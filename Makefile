@@ -100,6 +100,14 @@ _download-minecraft-server: ## Download minecraft server to $$(SERVICE_IMAGE_ROO
 			"$(SERVICE_IMAGE_ROOT)$(MINECRAFT_HOME)"
 
 
+.PHONY: ecr-clean
+ecr-clean: ## Remove docker containers in ECR
+	aws ecr batch-delete-image \
+		--profile "default" \
+		--repository-name "${PROJECT_NAME}" \
+		--image-ids imageTag="latest"
+
+
 .PHONY: help
 help: ## Display this helpful message
 	@IFS=$$'\n'; \
@@ -111,6 +119,17 @@ help: ## Display this helpful message
 		help_info=`echo $${help_split[2]} | sed -e 's/^ *//' -e 's/ *$$//'`; \
 		printf "%-20s %s\n" $$help_command $$help_info; \
 	done
+
+
+.PHONY: ns
+ns: ## Get nameservers for host route53 zone
+	aws cloudformation describe-stacks \
+		--profile "default" \
+		--stack-name "${PROJECT_NAME}" \
+		--query 'Stacks[0].[Outputs[0].OutputValue, \
+							Outputs[1].OutputValue, \
+							Outputs[2].OutputValue, \
+							Outputs[3].OutputValue]'
 
 
 .PHONY: _prepare-image-root

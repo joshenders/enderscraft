@@ -127,7 +127,7 @@ Resources:
     Properties:
       HostedZoneId: !Ref HostedZone
       Comment: Enderscraft DDNS record
-      Name: !Sub ${ParameterHostedZone}.
+      Name: !Sub ${ParameterHostedZone}
       ResourceRecords: 
         - 127.0.0.1
       TTL: 60
@@ -373,7 +373,7 @@ Resources:
               - logs:CreateLogGroup
               - logs:CreateLogStream
               - logs:PutLogEvents
-            Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+            Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/enderscraft*
 
 
   # ECR
@@ -426,7 +426,7 @@ Resources:
   EventsRuleDDNS:
     Type: AWS::Events::Rule
     Properties:
-      Description: Trigger ddns lambda for enderscraft tasks
+      Description: Triggers DNS update lambda for enderscraft tasks
       EventBusName: default
       EventPattern:
         source: 
@@ -441,7 +441,7 @@ Resources:
       Name: !Sub ${AWS::StackName}_ddns_rule
       State: ENABLED
       Targets: 
-        - Arn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}_ddns_lambda
+        - Arn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AWS::StackName}_ddns
           Id: LambdaTarget
           InputPath: $.detail
 
@@ -450,37 +450,39 @@ Resources:
   LambdaFunctionDDNS:
     Type: AWS::Lambda::Function
     Properties:
-      Description: Dynamically update DNS record for running tasks
+      Description: Updates DNS record for running tasks
       Runtime: python3.8
+      Timeout: 30
       Role: !GetAtt IAMRoleLambdaExecutionRole.Arn
-      FunctionName: !Sub ${AWS::StackName}_ddns_lambda
+      FunctionName: !Sub ${AWS::StackName}_ddns
       Handler: index.lambda_handler
       Code:
         ZipFile: !Sub |
-          C=dict
-          import boto3 as D,logging as E
+          D=dict
+          import boto3 as E,logging as B
           from sys import exit,stderr
-          B='${ParameterHostedZone}.'
-          I='${AWS::StackName}'
-          J=60
-          E.basicConfig(format='%(name)s [%(levelname)s] %(message)s')
-          A=E.getLogger(__name__)
-          A.setLevel(E.DEBUG)
+          C='${ParameterHostedZone}.'
+          J='${AWS::StackName}'
+          I=60
+          A=B.getLogger()
+          for G in A.handlers:G.setFormatter(B.Formatter('%(aws_request_id)s [%(levelname)s] %(message)s'))
+          A=B.getLogger(__name__)
+          A.setLevel(B.DEBUG)
           def K(arn):
-            def A(arn):A=D.client('ecs');B=A.describe_tasks(cluster='fargate',tasks=[arn]);return B.get('tasks',[C()])[0].get('attachments',[C()])[0].get('details',[C()])[1].get('value')
-            def B(eni):A=D.client('ec2');B=A.describe_network_interfaces(NetworkInterfaceIds=[eni]);return B.get('NetworkInterfaces',[C()])[0].get('Association',C()).get('PublicIp')
-            E=A(arn);return B(E)
+            def A(arn):A=E.client('ecs');B=A.describe_tasks(cluster='fargate',tasks=[arn]);return B.get('tasks',[D()])[0].get('attachments',[D()])[0].get('details',[D()])[1].get('value')
+            def B(eni):A=E.client('ec2');B=A.describe_network_interfaces(NetworkInterfaceIds=[eni]);return B.get('NetworkInterfaces',[D()])[0].get('Association',D()).get('PublicIp')
+            C=A(arn);return B(C)
           def F(answer):
-            I='Name';E={'Changes':[{'Action':'UPSERT','ResourceRecordSet':{I:B,'Type':'A','TTL':J,'ResourceRecords':[{'Value':answer}]}}]};F=D.client('route53');G=F.list_hosted_zones().get('HostedZones',list());C=None
+            J='Name';D={'Changes':[{'Action':'UPSERT','ResourceRecordSet':{J:C,'Type':'A','TTL':I,'ResourceRecords':[{'Value':answer}]}}]};F=E.client('route53');G=F.list_hosted_zones().get('HostedZones',list());B=None
             for H in G:
-              if H.get(I)==B:C=H.get('Id').split('/')[2];A.debug(f"Found zone_id: '{C}' for '{B}'")
-            if not C:A.error(f"'{B}' not found in hosted_zones: '{G}'");exit(1)
-            A.info(f"Calling route53 with batch: '{E}'");return F.change_resource_record_sets(HostedZoneId=C,ChangeBatch=E)
+              if H.get(J)==C:B=H.get('Id').split('/')[2];A.info(f"Found zone_id: '{B}' for '{C}'")
+            if not B:A.error(f"'{C}' not found in hosted_zones: '{G}'");exit(1)
+            A.info(f"Route53 request: '{D}'");return F.change_resource_record_sets(HostedZoneId=B,ChangeBatch=D)
           def lambda_handler(event,_):
-            H='RUNNING';B=event;J=B.get('taskDefinitionArn');C=B.get('lastStatus');D=B.get('desiredStatus')
-            if I not in J:A.warning(f"Ignored event");return
-            elif C==H and D=='STOPPED':A.info(f"Task stop event");F('127.0.0.1');return
-            elif C==H and D==H:A.info(f"Task start event");E=B.get('taskArn');G=K(E);A.debug(f"task_arn: '{E}', ipv4_add4: '{G}'");L=F(G);A.info(f"Route53 response: '{L}'")
+            I='RUNNING';B=event;L=B.get('taskDefinitionArn');D=B.get('lastStatus');E=B.get('desiredStatus')
+            if J not in L:A.warning(f"Ignored event");return
+            elif D==I and E=='STOPPED':A.info(f"Task stop event");C=F('127.0.0.1');A.info(f"Route53 response: '{C}'");return
+            elif D==I and E==I:A.info(f"Task start event");G=B.get('taskArn');H=K(G);A.info(f"ipv4_addr: '{H}', task_arn: '{G}'");C=F(H);A.info(f"Route53 response: '{C}'")
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-LambdaFunctionDDNS
@@ -526,7 +528,7 @@ Resources:
   LogGroupLambda:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}_ddns_lambda
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}_ddns
       RetentionInDays: !Ref ParameterLogRetentionDays
 
 

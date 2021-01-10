@@ -3,11 +3,14 @@ import logging
 from sys import exit, stderr
 
 # FIXME: Derive from
-HOSTED_ZONE = "${ParameterHostedZone}"
+HOSTED_ZONE = "${ParameterHostedZone}."
 PROJECT_NAME = "${AWS::StackName}"
 TTL = 60
 
-logging.basicConfig(format="%(name)s [%(levelname)s] %(message)s")
+log = logging.getLogger()
+for h in log.handlers:
+    h.setFormatter(logging.Formatter("%(aws_request_id)s [%(levelname)s] %(message)s"))
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -59,13 +62,13 @@ def update_record(answer):
     for zone in hosted_zones:
         if zone.get("Name") == HOSTED_ZONE:
             zone_id = zone.get("Id").split("/")[2]
-            log.debug(f"Found zone_id: '{zone_id}' for '{HOSTED_ZONE}'")
+            log.info(f"Found zone_id: '{zone_id}' for '{HOSTED_ZONE}'")
 
     if not zone_id:
         log.error(f"'{HOSTED_ZONE}' not found in hosted_zones: '{hosted_zones}'")
         exit(1)
 
-    log.info(f"Calling route53 with batch: '{batch}'")
+    log.info(f"Route53 request: '{batch}'")
     return route53.change_resource_record_sets(HostedZoneId=zone_id, ChangeBatch=batch)
 
 
@@ -79,12 +82,13 @@ def lambda_handler(event, _):
         return
     elif last_status == "RUNNING" and desired_status == "STOPPED":
         log.info(f"Task stop event")
-        update_record("127.0.0.1")
+        response = update_record("127.0.0.1")
+        log.info(f"Route53 response: '{response}'")
         return
     elif last_status == "RUNNING" and desired_status == "RUNNING":
         log.info(f"Task start event")
         task_arn = event.get("taskArn")
         ipv4_addr = get_ipv4_from_task_arn(task_arn)
-        log.debug(f"task_arn: '{task_arn}', ipv4_add4: '{ipv4_addr}'")
+        log.info(f"ipv4_addr: '{ipv4_addr}', task_arn: '{task_arn}'")
         response = update_record(ipv4_addr)
         log.info(f"Route53 response: '{response}'")
