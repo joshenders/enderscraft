@@ -455,7 +455,7 @@ Resources:
       Timeout: 30
       Role: !GetAtt IAMRoleLambdaExecutionRole.Arn
       FunctionName: !Sub ${AWS::StackName}_ddns
-      Handler: index.lambda_handler
+      Handler: index.handler
       Code:
         ZipFile: !Sub |
           D=dict
@@ -478,7 +478,7 @@ Resources:
               if H.get(J)==C:B=H.get('Id').split('/')[2];A.info(f"Found zone_id: '{B}' for '{C}'")
             if not B:A.error(f"'{C}' not found in hosted_zones: '{G}'");exit(1)
             A.info(f"Route53 request: '{D}'");return F.change_resource_record_sets(HostedZoneId=B,ChangeBatch=D)
-          def lambda_handler(event,_):
+          def handler(event,_):
             I='RUNNING';B=event;L=B.get('taskDefinitionArn');D=B.get('lastStatus');E=B.get('desiredStatus')
             if J not in L:A.warning(f"Ignored event");return
             elif D==I and E=='STOPPED':A.info(f"Task stop event");C=F('127.0.0.1');A.info(f"Route53 response: '{C}'");return

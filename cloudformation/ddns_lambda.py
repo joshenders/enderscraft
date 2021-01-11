@@ -72,7 +72,7 @@ def update_record(answer):
     return route53.change_resource_record_sets(HostedZoneId=zone_id, ChangeBatch=batch)
 
 
-def lambda_handler(event, _):
+def handler(event, _):
     task_def = event.get("taskDefinitionArn")
     last_status = event.get("lastStatus")
     desired_status = event.get("desiredStatus")
