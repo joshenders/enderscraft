@@ -22,9 +22,10 @@
 ### Pricing
 
 Enderscraft is free as in beer but you can roughly approximate your AWS bill with the table below.
+
 | per vCPU per hour | per GB of RAM per hour |
 | ----------------- | ---------------------- |
-| $0.01264791 | $0.00138883 |
+| $0.01264791       | $0.00138883            |
 
 You will also incur additional charges for things like: data transfer, log storage, container storage, lambdas, DNS queries, and volume backups. To keep costs under control, during the initial setup, a budget and alerts are created which will notify you at 50%, 75%, and 95% of your user-defined monthly allowance.
 
