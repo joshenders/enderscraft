@@ -21,7 +21,7 @@
 
 ### Pricing
 
-Enderscraft is free as in beer but you can loosely approximate your AWS bill with the table below. You will also incur additional charges for things like: data transfer, log storage, container storage, lambdas, DNS queries, and volume backups. During the initial setup, a budget and alerts are created which will notify you at 50%, 75%, and 95% of your user-defined monthly allowance.
+Enderscraft is free as in beer but you can roughly approximate your AWS bill with the table below. You will also incur additional charges for things like: data transfer, log storage, container storage, lambdas, DNS queries, and volume backups. During the initial setup, a budget and alerts are created which will notify you at 50%, 75%, and 95% of your user-defined monthly allowance.
 
 | per vCPU per hour | per GB of RAM per hour |
 | ----------------- | ---------------------- |
