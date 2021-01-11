@@ -57,15 +57,15 @@ def update_record(answer):
     }
 
     route53 = boto3.client("route53")
-    FQDNs = route53.list_FQDNs().get("HostedZones", list())
+    hosted_zones = route53.list_hosted_zones().get("HostedZones", list())
     zone_id = None
-    for zone in FQDNs:
+    for zone in hosted_zones:
         if zone.get("Name") == FQDN:
             zone_id = zone.get("Id").split("/")[2]
             log.info(f"Found zone_id: '{zone_id}' for '{FQDN}'")
 
     if not zone_id:
-        log.error(f"'{FQDN}' not found in FQDNs: '{FQDNs}'")
+        log.error(f"'{FQDN}' not found in hosted_zones: '{hosted_zones}'")
         exit(1)
 
     log.info(f"Route53 request: '{batch}'")
