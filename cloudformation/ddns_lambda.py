@@ -2,8 +2,8 @@ import boto3
 import logging
 from sys import exit
 
-# FIXME: Derive from
-HOSTED_ZONE = "${ParameterHostedZone}."
+# FIXME: Derive from the tag
+FQDN = "${ParameterHostedZone}" + "."
 PROJECT_NAME = "${AWS::StackName}"
 TTL = 60
 
@@ -45,7 +45,7 @@ def update_record(answer):
             {
                 "Action": "UPSERT",
                 "ResourceRecordSet": {
-                    "Name": HOSTED_ZONE,
+                    "Name": FQDN,
                     "Type": "A",
                     "TTL": TTL,
                     "ResourceRecords": [
@@ -57,15 +57,15 @@ def update_record(answer):
     }
 
     route53 = boto3.client("route53")
-    hosted_zones = route53.list_hosted_zones().get("HostedZones", list())
+    FQDNs = route53.list_FQDNs().get("HostedZones", list())
     zone_id = None
-    for zone in hosted_zones:
-        if zone.get("Name") == HOSTED_ZONE:
+    for zone in FQDNs:
+        if zone.get("Name") == FQDN:
             zone_id = zone.get("Id").split("/")[2]
-            log.info(f"Found zone_id: '{zone_id}' for '{HOSTED_ZONE}'")
+            log.info(f"Found zone_id: '{zone_id}' for '{FQDN}'")
 
     if not zone_id:
-        log.error(f"'{HOSTED_ZONE}' not found in hosted_zones: '{hosted_zones}'")
+        log.error(f"'{FQDN}' not found in FQDNs: '{FQDNs}'")
         exit(1)
 
     log.info(f"Route53 request: '{batch}'")
