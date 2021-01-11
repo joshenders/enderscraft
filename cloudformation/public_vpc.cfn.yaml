@@ -9,61 +9,82 @@ Parameters:
   ParameterVPCCIDR:
     Description: VPC CIDR Block
     Type: String
-    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: "10.0.0.0/24"
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   ParameterSubnetPublicCIDR:
     Description: Public Subnet CIDR Block
     Type: String
-    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: "10.0.0.0/26"
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   ParameterAdminCIDR:
     Description: CIDR Block which will be able to connect to RCON
     Type: String
-    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: "0.0.0.0/0"
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   ParameterMinecraftPort:
     Description: Minecraft port
     Type: String
-    AllowedPattern: '\d{1,5}'
     Default: "25565"
+    AllowedPattern: '\d{1,5}'
 
   ParameterRCONPort:
     Description: RCON port
     Type: String
-    AllowedPattern: '\d{1,5}'
     Default: "25575"
+    AllowedPattern: '\d{1,5}'
 
   ParameterHostedZone:
-    Description: Non-Fully Qualified Domain Name (no trailing dot)
+    Description: Domain Name (non-FQDN)
     Type: String
-    AllowedPattern: '[a-zA-Z0-9-.]+'
+    AllowedPattern: '^[a-zA-Z0-9-.]+[a-zA-Z0-9-]$'
 
   ParameterIAMUser:
     Description: IAM User
     Type: String
-    AllowedPattern: '[a-z]+'
     Default: "enderscraft"
+    AllowedPattern: '[a-z]+'
 
   ParameterLogRetentionDays:
-    Description: Days of log retention for tasks (1|3|5|7|14|30|60|90|120|150|180|365|400|545|731|1827|3653)
-    Type: String
-    AllowedPattern: '^(1|3|5|7|14|30|60|90|120|150|180|365|400|545|731|1827|3653)$'
-    Default: "7"
+    Description: Days of log retention for tasks
+    Type: Number
+    Default: 7
+    AllowedValues:
+      - 1
+      - 3
+      - 5
+      - 7
+      - 14
+      - 30
+      - 60
+      - 90
+      - 120
+      - 150
+      - 180
+      - 365
+      - 400
+      - 545
+      - 731
+      - 1827
+      - 3653
 
   ParameterBudgetAmountUSD:
     Description: Allowance of USD to spend per unit of time
     Type: String
-    AllowedPattern: '^\d+(\.\d+)?$'
     Default: "10"
+    AllowedPattern: '^\d+(\.\d+)?$'
 
   ParameterBudgetFrequency:
-    Description: "Period of time to calculate budget (DAILY|MONTHLY|QUARTERLY|ANNUALLY)"
+    Description: "Period of time to calculate budget"
     Type: String
-    AllowedPattern: '^(ANNUALLY|DAILY|MONTHLY|QUARTERLY)$'
     Default: "MONTHLY"
+    AllowedValues:
+      - DAILY
+      - MONTHLY
+      - QUARTERLY
+      - ANNUALLY
 
   ParameterEmailAddress:
     Description: Email address for budget notifications
@@ -127,7 +148,7 @@ Resources:
     Properties:
       HostedZoneId: !Ref HostedZone
       Comment: Enderscraft DDNS record
-      Name: !Sub ${ParameterHostedZone}
+      Name: !Ref ParameterHostedZone
       ResourceRecords: 
         - 127.0.0.1
       TTL: 60
@@ -364,7 +385,7 @@ Resources:
           - Effect: Allow
             Action:
               - ec2:DescribeNetworkInterfaces
-              - route53:ListHostedZones
+              - route53:GetHostedZone
               - route53:ChangeResourceRecordSets
             Resource: "*"
 
@@ -458,31 +479,28 @@ Resources:
       Handler: index.handler
       Code:
         ZipFile: !Sub |
-          D=dict
-          import boto3 as E,logging as B
+          import boto3,logging
           from sys import exit
-          C='${ParameterHostedZone}.'
-          J='${AWS::StackName}'
-          I=60
-          A=B.getLogger()
-          for G in A.handlers:G.setFormatter(B.Formatter('%(aws_request_id)s [%(levelname)s] %(message)s'))
-          A=B.getLogger(__name__)
-          A.setLevel(B.DEBUG)
-          def K(arn):
-            def A(arn):A=E.client('ecs');B=A.describe_tasks(cluster='fargate',tasks=[arn]);return B.get('tasks',[D()])[0].get('attachments',[D()])[0].get('details',[D()])[1].get('value')
-            def B(eni):A=E.client('ec2');B=A.describe_network_interfaces(NetworkInterfaceIds=[eni]);return B.get('NetworkInterfaces',[D()])[0].get('Association',D()).get('PublicIp')
+          ZONE_ID='${HostedZone}'
+          PROJECT_NAME='${AWS::StackName}'
+          TTL=60
+          log=logging.getLogger()
+          for h in log.handlers:h.setFormatter(logging.Formatter('%(aws_request_id)s [%(levelname)s] %(message)s'))
+          log=logging.getLogger(__name__)
+          log.setLevel(logging.DEBUG)
+          def get_ipv4_from_task_arn(arn):
+            def A(arn):A=boto3.client('ecs');B=A.describe_tasks(cluster='fargate',tasks=[arn]);return B.get('tasks',[dict()])[0].get('attachments',[dict()])[0].get('details',[dict()])[1].get('value')
+            def B(eni):A=boto3.client('ec2');B=A.describe_network_interfaces(NetworkInterfaceIds=[eni]);return B.get('NetworkInterfaces',[dict()])[0].get('Association',dict()).get('PublicIp')
             C=A(arn);return B(C)
-          def F(answer):
-            J='Name';D={'Changes':[{'Action':'UPSERT','ResourceRecordSet':{J:C,'Type':'A','TTL':I,'ResourceRecords':[{'Value':answer}]}}]};F=E.client('route53');G=F.list_hosted_zones().get('HostedZones',list());B=None
-            for H in G:
-              if H.get(J)==C:B=H.get('Id').split('/')[2];A.info(f"Found zone_id: '{B}' for '{C}'")
-            if not B:A.error(f"'{C}' not found in hosted_zones: '{G}'");exit(1)
-            A.info(f"Route53 request: '{D}'");return F.change_resource_record_sets(HostedZoneId=B,ChangeBatch=D)
+          def update_record(rdata):
+            E='Name';A=boto3.client('route53');D=A.get_hosted_zone(Id=ZONE_ID);B=D.get('HostedZone',dict()).get(E)
+            if not B:log.error(f"Could not find FQDN for ZONE_ID: '{ZONE_ID}'");exit(1)
+            C={'Changes':[{'Action':'UPSERT','ResourceRecordSet':{E:B,'Type':'A','TTL':TTL,'ResourceRecords':[{'Value':rdata}]}}]};log.info(f"Route53 request: '{C}'");return A.change_resource_record_sets(HostedZoneId=ZONE_ID,ChangeBatch=C)
           def handler(event,_):
-            I='RUNNING';B=event;L=B.get('taskDefinitionArn');D=B.get('lastStatus');E=B.get('desiredStatus')
-            if J not in L:A.warning(f"Ignored event");return
-            elif D==I and E=='STOPPED':A.info(f"Task stop event");C=F('127.0.0.1');A.info(f"Route53 response: '{C}'");return
-            elif D==I and E==I:A.info(f"Task start event");G=B.get('taskArn');H=K(G);A.info(f"ipv4_addr: '{H}', task_arn: '{G}'");C=F(H);A.info(f"Route53 response: '{C}'")
+            G='RUNNING';A=event;H=A.get('taskDefinitionArn');C=A.get('lastStatus');D=A.get('desiredStatus')
+            if PROJECT_NAME not in H:log.warning(f"Ignored event");return
+            elif C==G and D=='STOPPED':log.info(f"Task stop event");B=update_record('127.0.0.1');log.info(f"Route53 response: '{B}'");return
+            elif C==G and D==G:log.info(f"Task start event");E=A.get('taskArn');F=get_ipv4_from_task_arn(E);log.info(f"ipv4_addr: '{F}', task_arn: '{E}'");B=update_record(F);log.info(f"Route53 response: '{B}'")
       Tags:
         - Key: Name
           Value: !Sub ${AWS::StackName}-LambdaFunctionDDNS

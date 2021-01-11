@@ -2,8 +2,7 @@ import boto3
 import logging
 from sys import exit
 
-# FIXME: Derive from the tag
-FQDN = "${ParameterHostedZone}" + "."
+ZONE_ID = "${HostedZone}"
 PROJECT_NAME = "${AWS::StackName}"
 TTL = 60
 
@@ -39,37 +38,33 @@ def get_ipv4_from_task_arn(arn):
     return _get_ipv4_from_eni(eni)
 
 
-def update_record(answer):
+def update_record(rdata):
+    route53 = boto3.client("route53")
+    response = route53.get_hosted_zone(Id=ZONE_ID)
+    fqdn = response.get("HostedZone", dict()).get("Name")
+
+    if not fqdn:
+        log.error(f"Could not find FQDN for ZONE_ID: '{ZONE_ID}'")
+        exit(1)
+
     batch = {
         "Changes": [
             {
                 "Action": "UPSERT",
                 "ResourceRecordSet": {
-                    "Name": FQDN,
+                    "Name": fqdn,
                     "Type": "A",
                     "TTL": TTL,
                     "ResourceRecords": [
-                        {"Value": answer},
+                        {"Value": rdata},
                     ],
                 },
             },
         ],
     }
 
-    route53 = boto3.client("route53")
-    hosted_zones = route53.list_hosted_zones().get("HostedZones", list())
-    zone_id = None
-    for zone in hosted_zones:
-        if zone.get("Name") == FQDN:
-            zone_id = zone.get("Id").split("/")[2]
-            log.info(f"Found zone_id: '{zone_id}' for '{FQDN}'")
-
-    if not zone_id:
-        log.error(f"'{FQDN}' not found in hosted_zones: '{hosted_zones}'")
-        exit(1)
-
     log.info(f"Route53 request: '{batch}'")
-    return route53.change_resource_record_sets(HostedZoneId=zone_id, ChangeBatch=batch)
+    return route53.change_resource_record_sets(HostedZoneId=ZONE_ID, ChangeBatch=batch)
 
 
 def handler(event, _):
