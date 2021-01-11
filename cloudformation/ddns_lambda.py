@@ -1,6 +1,6 @@
 import boto3
 import logging
-from sys import exit, stderr
+from sys import exit
 
 # FIXME: Derive from
 HOSTED_ZONE = "${ParameterHostedZone}."

@@ -460,7 +460,7 @@ Resources:
         ZipFile: !Sub |
           D=dict
           import boto3 as E,logging as B
-          from sys import exit,stderr
+          from sys import exit
           C='${ParameterHostedZone}.'
           J='${AWS::StackName}'
           I=60
