@@ -94,7 +94,7 @@ aws cloudformation create-stack \
     --profile "default" \
     --region "${AWS_REGION}" \
     --stack-name "${PROJECT_NAME}" \
-    --template-body "file://cloudformation/public_vpc.cfn.yaml" \
+    --template-body "file://aws/public_vpc.cfn.yaml" \
     --capabilities "CAPABILITY_NAMED_IAM" \
     --parameters \
         "ParameterKey=ParameterHostedZone,ParameterValue=${CFN_DOMAIN}" \
