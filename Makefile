@@ -22,9 +22,9 @@ AWS_PAGER := cat
 ifneq ($(filter $(MAKECMDGOALS),push task),)
     AWS_REGION     := $(shell aws configure get region --profile $(PROJECT_NAME))
     AWS_ACCOUNT_ID := $(shell aws sts get-caller-identity --profile 'default' --output 'text' --query 'Account')
-    AWS_VPC_ID     := $(shell aws ec2 describe-vpcs --profile 'default' --output 'text' --filters "Name=tag:aws:cloudformation:stack-name,Values=${PROJECT_NAME}" --query 'Vpcs[0].VpcId')
-    AWS_SUBNET_ID  := $(shell aws ec2 describe-subnets --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SubnetPublic" --query 'Subnets[0].SubnetId')
-    AWS_SG_ID      := $(shell aws ec2 describe-security-groups --profile 'default' --output 'text' --filters "Name=tag:Name,Values=${PROJECT_NAME}-SecurityGroupFargateTasks" --query 'SecurityGroups[0].GroupId')
+    AWS_VPC_ID     := $(shell aws ec2 describe-vpcs --profile 'default' --output 'text' --filters "Name=tag:aws:cloudformation:stack-name,Values=$(PROJECT_NAME)" --query 'Vpcs[0].VpcId')
+    AWS_SUBNET_ID  := $(shell aws ec2 describe-subnets --profile 'default' --output 'text' --filters "Name=tag:Name,Values=$(PROJECT_NAME)-SubnetPublic" --query 'Subnets[0].SubnetId')
+    AWS_SG_ID      := $(shell aws ec2 describe-security-groups --profile 'default' --output 'text' --filters "Name=tag:Name,Values=$(PROJECT_NAME)-SecurityGroupFargateTasks" --query 'SecurityGroups[0].GroupId')
 endif
 
 # Container
@@ -105,7 +105,7 @@ _download-minecraft-server: ## Download minecraft server to $$(SERVICE_IMAGE_ROO
 ecr-clean: ## Remove docker containers in ECR
 	@aws ecr batch-delete-image \
 		--profile "default" \
-		--repository-name "${PROJECT_NAME}" \
+		--repository-name "$(PROJECT_NAME)" \
 		--image-ids imageTag="latest"
 
 
@@ -127,7 +127,7 @@ ns: ## Get nameservers for hosted zone in route53
 	@AWS_PAGER=$(AWS_PAGER) \
 	aws cloudformation describe-stacks \
 		--profile "default" \
-		--stack-name "${PROJECT_NAME}" \
+		--stack-name "$(PROJECT_NAME)" \
 		--query 'Stacks[0].[Outputs[0].OutputValue, \
 							Outputs[1].OutputValue, \
 							Outputs[2].OutputValue, \
@@ -142,16 +142,16 @@ _prepare-image-root: ## A meaningful description
 .PHONY: push
 push: ## Login to ECR, tag latest image, upload latest image to ECR
 	@aws ecr get-login-password \
-		--region "${AWS_REGION}" \
+		--region "$(AWS_REGION)" \
 	| docker login \
 		--username "AWS" \
 		--password-stdin \
-			"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+			"$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com"
 	@docker tag \
-		"${PROJECT_NAME}:latest" \
-		"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PROJECT_NAME}:latest"
+		"$(PROJECT_NAME):latest" \
+		"$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(PROJECT_NAME):latest"
 	@docker push \
-		"${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PROJECT_NAME}:latest"
+		"$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(PROJECT_NAME):latest"
 
 
 .PHONY: stop
@@ -159,7 +159,7 @@ stop: ## Stop a running task
 	@AWS_PROFILE=$(PROJECT_NAME) \
 	fargate task stop \
 		--no-emoji \
-			enderscraft
+			"$(PROJECT_NAME)"
 
 
 .PHONY: task
@@ -167,10 +167,10 @@ task: ## Create a new task
 	@AWS_PROFILE=$(PROJECT_NAME) \
 	fargate task run \
 		--no-emoji \
-		--subnet-id "${AWS_SUBNET_ID}" \
-		--security-group-id "${AWS_SG_ID}" \
+		--subnet-id "$(AWS_SUBNET_ID)" \
+		--security-group-id "$(AWS_SG_ID)" \
 		--env "ACCEPT_EULA=yes" \
 		--cpu "1024" \
 		--memory "2048" \
-		--image "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/enderscraft:latest" \
+		--image "$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(PROJECT_NAME):latest" \
 			"$(PROJECT_NAME)"
