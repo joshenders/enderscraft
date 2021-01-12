@@ -122,6 +122,15 @@ help: ## Display this helpful message
 	done
 
 
+.PHONY: logs
+logs: ## Follow logs of task
+	@AWS_PROFILE=$(PROJECT_NAME) \
+	fargate task logs \
+		--follow \
+		--no-emoji \
+			"$(PROJECT_NAME)"
+
+
 .PHONY: ns
 ns: ## Get nameservers for hosted zone in route53
 	@AWS_PAGER=$(AWS_PAGER) \
@@ -152,6 +161,14 @@ push: ## Login to ECR, tag latest image, upload latest image to ECR
 		"$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(PROJECT_NAME):latest"
 	@docker push \
 		"$(AWS_ACCOUNT_ID).dkr.ecr.$(AWS_REGION).amazonaws.com/$(PROJECT_NAME):latest"
+
+
+.PHONY: status
+status: ## Status of task
+	@AWS_PROFILE=$(PROJECT_NAME) \
+	fargate task info \
+		--no-emoji \
+			"$(PROJECT_NAME)"
 
 
 .PHONY: stop
